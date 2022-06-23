@@ -109,7 +109,7 @@ class Board:
                 raise ValueError("Code contains duplicates")
             else:
                 self.__code = code
-    
+
     def getCode(self):
         return self.__code
 
@@ -120,11 +120,11 @@ class Board:
         raise NotImplementedError()
 
 
-
 print("Welcome to Mastermind!")
 print("Getting a 1 in the result means that you have a peg in the correct colour and position.")
 print("Getting a 2 in the result means that you have a peg in the correct colour but in the wrong position.")
 print("Generating the code...")
+print("The code is a list of four numbers between 1 and 6, with no repeats.")
 board = Board(4, 6)
 board.setCode()
 while True:
@@ -132,6 +132,9 @@ while True:
         guess = input("Enter a guess in the form _ _ _ _ : ")
         if guess == "show code":
             print(board.getCode())
+            continue
+        elif guess == "show guesses":
+            print(board.getGuesses())
             continue
         guess = guess.split(" ")
         guess = [int(i) for i in guess]
