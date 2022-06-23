@@ -1,136 +1,151 @@
 import random
-import os
- 
-def clear():
-    os.system("clear")
- 
-# Function to print the mastermind board
-def print_mastermind_board(passcode, guess_codes, guess_flags):
- 
- 
-    print("-----------------------------------------")
-    print("\t      MASTERMIND")
-    print("-----------------------------------------")
- 
-    print("    |", end="")
-    for x in passcode:
-        print("\t" + x[:3], end="")
-    print() 
- 
-    for i in reversed(range(len(guess_codes))):
-        print("-----------------------------------------")
-        print(guess_flags[i][0], guess_flags[i][1], "|")
-         
- 
-        print(guess_flags[i][2], guess_flags[i][3], end=" |")
-        for x in guess_codes[i]:
-            print("\t" + x[:3], end="")
- 
-        print() 
-    print("-----------------------------------------")
- 
-# The Main function
-if __name__ == '__main__':
- 
-    # List of colors
-    colors = ["RED", "GREEN", "YELLOW", "BLUE", "BLACK", "ORANGE"]
- 
-    # Mapping of colors to numbers  
-    colors_map = {1:"RED", 2:"GREEN", 3:"YELLOW", 4:"BLUE", 5:"BLACK", 6:"ORANGE"}
- 
-    # Randomly selecting a passcode
-    random.shuffle(colors)
-    passcode = colors[:4]
-     
-    # Number of chances for the player
-    chances = 8
- 
-    # The passcode to be shown to the user
-    show_passcode = ['UNK', 'UNK', 'UNK', 'UNK']
- 
-    # The codes guessed by the player each turn
-    guess_codes = [['-', '-', '-', '-'] for x in range(chances)]
- 
-    # The clues provided to the player each turn
-    guess_flags = [['-', '-', '-', '-'] for x in range(chances)]
-     
-    clear()
- 
-    # The current turn
-    turn = 0
- 
-    # The GAME LOOP
-    while turn < chances:
-         
-        print("-----------------------------------------")
-        print("\t\tMenu")
-        print("-----------------------------------------")
-        print("Enter code using numbers.")
-        print("1 - RED, 2 - GREEN, 3 - YELLOW, 4 - BLUE, 5 - BLACK, 6 - ORANGE")
-        print("Example: RED YELLOW ORANGE BLACK ---> 1 3 6 5")
-        print("-----------------------------------------")
-        print_mastermind_board(show_passcode, guess_codes, guess_flags)
- 
-        # Accepting the player input 
-        try:    
-            code = list(map(int, input("Enter your choice = ").split()))
-        except ValueError:
-            clear()
-            print("\tWrong choice!! Try again!!")
-            continue   
- 
-        # Check if the number of colors nunbers are 4
-        if len(code) != 4:
-            clear()
-            print("\tWrong choice!! Try again!!")
+
+
+class Board:
+    """
+    Board class
+    """
+
+    def __init__(
+        self,
+        length: int,
+        totalGuesses: int = 6,
+        duplicatesAllowed: bool = False,
+        colours: dict = {
+            1: "red",
+            2: "blue",
+            3: "green",
+            4: "yellow",
+            5: "orange",
+            6: "purple",
+        },
+        resultColours: dict = {1: "black", 2: "white"},
+    ):
+        self.__lenOfGuess = length
+        self.__totalGuesses = totalGuesses
+        self.__duplicatesAllowed = duplicatesAllowed
+        self.__colours = colours
+        self.__resultColours = resultColours
+        self.__guessPointer = 0
+        self.__guesses = [[None for _ in range(length)] for _ in range(totalGuesses)]
+        self.__code = None
+
+    def getColours(self):
+        return self.__colours
+
+    def getResultColours(self):
+        return self.__resultColours
+
+    def getLenOfGuess(self):
+        return self.__lenOfGuess
+
+    def getTotalGuesses(self):
+        return self.__totalGuesses
+
+    def getRemainingGuesses(self):
+        return self.__totalGuesses - self.__guessPointer
+
+    def makeGuess(self, guess: list) -> tuple:
+        """
+        Makes a guess and returns a tuple containing the result, the number of guesses remaining, if the guess was correct
+        """
+        self.__guesses[self.__guessPointer] = guess
+        result = self.__genGuessResult(guess)
+        if result == [1] * self.__lenOfGuess:
+            codeCorrect = True
+        else:
+            codeCorrect = False
+            self.__guessPointer += 1
+        return (result, self.getRemainingGuesses(), codeCorrect)
+
+    def __genGuessResult(self, guess: list) -> list:
+        """
+        Returns a list of the result of a guess
+        """
+        # checks that the guess is in the correct format
+        if len(guess) != self.__lenOfGuess:
+            raise ValueError("Guess length is not long enough")
+        elif not all(num in list(self.__colours.keys()) for num in guess):
+            raise ValueError("Guess contains invalid colour")
+        # calculates the result
+        result = []
+        for i in range(len(guess)):
+            if guess[i] == self.__code[i]:
+                result.append(1)
+            elif guess[i] in self.__code:
+                result.append(2)
+        return result
+
+    def getGuesses(self) -> list:
+        """
+        returns the already made guesses
+        """
+        guesses = []
+        for i in range(self.__guessPointer):
+            guesses.append(self.__guesses[i])
+        return guesses
+
+    def setCode(self, code: list = None):
+        """
+        Sets the code for the board
+        """
+        if code is None:
+            # generate random code
+            if not self.__duplicatesAllowed:
+                self.__code = random.sample(
+                    list(self.__colours.keys()), self.__lenOfGuess
+                )
+            else:
+                self.__code = [
+                    random.choice(list(self.__colours.keys()))
+                    for _ in range(self.__lenOfGuess)
+                ]
+        else:
+            if len(code) != self.__lenOfGuess:
+                raise ValueError("Code length is not correct")
+            elif not all(colour in self.__colours for colour in code):
+                raise ValueError("Code contains invalid colour")
+            elif not self.__duplicatesAllowed and len(set(code)) != self.__lenOfGuess:
+                raise ValueError("Code contains duplicates")
+            else:
+                self.__code = code
+    
+    def getCode(self):
+        return self.__code
+
+    def __str__(self) -> str:
+        """
+        Returns a string representation of the board
+        """
+        raise NotImplementedError()
+
+
+
+print("Welcome to Mastermind!")
+print("Getting a 1 in the result means that you have a peg in the correct colour and position.")
+print("Getting a 2 in the result means that you have a peg in the correct colour but in the wrong position.")
+print("Generating the code...")
+board = Board(4, 6)
+board.setCode()
+while True:
+    while True:
+        guess = input("Enter a guess in the form _ _ _ _ : ")
+        if guess == "show code":
+            print(board.getCode())
             continue
- 
-        # Check if each number entered corresponds to a number
-        flag = 0
-        for x in code:
-            if x > 6 or x < 1:
-                flag = 1
- 
-        if flag == 1:           
-            clear()
-            print("\tWrong choice!! Try again!!")
-            continue   
- 
-        # Storing the player input
-        for i in range(4):
-            guess_codes[turn][i] = colors_map[code[i]]  
- 
-        # Process to apply clues according to the player input  
-        dummy_passcode = [x for x in passcode]  
- 
-        pos = 0
- 
-        # Loop to set up clues for the player move
-        for x in code:
-            if colors_map[x] in dummy_passcode:
-                if code.index(x) == passcode.index(colors_map[x]):
-                    guess_flags[turn][pos] = 'R'
-                else:
-                    guess_flags[turn][pos] = 'W'
-                pos += 1
-                dummy_passcode.remove(colors_map[x])
- 
-        random.shuffle(guess_flags[turn])               
- 
- 
-        # Check for win condition
-        if guess_codes[turn] == passcode:
-            clear()
-            print_mastermind_board(passcode, guess_codes, guess_flags)
-            print("Congratulations!! YOU WIN!!!!")
+        guess = guess.split(" ")
+        guess = [int(i) for i in guess]
+        if len(guess) != board.getLenOfGuess():
+            print("Guess length is not long enough")
+        elif not all(num in list(board.getColours().keys()) for num in guess):
+            print("Guess contains invalid number")
+        else:
             break
- 
-        # Update turn   
-        turn += 1          
-        clear()
- 
-# Check for loss condiiton  
-if turn == chances:
-    clear()
-    print_mastermind_board(passcode, guess_codes, guess_flags)
-    print("YOU LOSE!!! Better luck next time!!!")  
+    result, remainingGuesses, codeCorrect = board.makeGuess(guess)
+    print(result)
+    if codeCorrect:
+        print("You win!")
+        break
+    if remainingGuesses == 0:
+        print("You lost")
+        break
