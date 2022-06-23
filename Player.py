@@ -19,10 +19,10 @@ class Player:
     """
 
     def __init__(self):
-        pass
+        raise NotImplementedError()
 
-    def getMove(self):
-        pass
+    def getMove(self) -> list:
+        raise NotImplementedError()
 
 
 class AI(Player):
@@ -32,7 +32,7 @@ class AI(Player):
 
     def __init__(self):
         super.__init__(self)
-        pass
+        raise NotImplementedError()
 
 
 class Human(Player):
@@ -40,10 +40,9 @@ class Human(Player):
     Human class that inherits from the Player class
     """
 
-    def __init__(self, statistics: Statistics):
+    def __init__(self):
         super.__init__(self)
-        self.statistics = statistics
-        pass
+        raise NotImplementedError()
 
 
 class LocalHuman(Human):
@@ -53,7 +52,7 @@ class LocalHuman(Human):
 
     def __init__(self):
         super.__init__(self)
-        pass
+        raise NotImplementedError()
 
 
 class NetworkingHuman(Human):
@@ -63,4 +62,4 @@ class NetworkingHuman(Human):
 
     def __init__(self):
         super.__init__(self)
-        pass
+        raise NotImplementedError()

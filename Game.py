@@ -1,7 +1,6 @@
 import random
 from Player import Player
 
-
 class Board:
     """
     Board class
@@ -12,7 +11,7 @@ class Board:
         length: int,
         totalGuesses: int = 6,
         duplicatesAllowed: bool = False,
-        colours: dict = {
+        colours: dict[int, str] = {
             1: "red",
             2: "blue",
             3: "green",
@@ -20,7 +19,7 @@ class Board:
             5: "orange",
             6: "purple",
         },
-        resultColours: dict = {1: "black", 2: "white"},
+        resultColours: dict[int, str] = {1: "black", 2: "white"},
     ):
         self.__lenOfGuess = length
         self.__totalGuesses = totalGuesses
@@ -28,8 +27,10 @@ class Board:
         self.__colours = colours
         self.__resultColours = resultColours
         self.__guessPointer = 0
-        self.__guesses = [[None for _ in range(length)] for _ in range(totalGuesses)]
-        self.__code = None
+        self.__guesses: list[list[int | None]] = [
+            [None for _ in range(length)] for _ in range(totalGuesses)
+        ]
+        self.__code: list[int] | None = None
 
     def getColours(self):
         return self.__colours
@@ -46,7 +47,7 @@ class Board:
     def getRemainingGuesses(self):
         return self.__totalGuesses - self.__guessPointer
 
-    def makeGuess(self, guess: list) -> tuple:
+    def makeGuess(self, guess: list) -> tuple[list, int, bool]:
         """
         Makes a guess and returns a tuple containing the result, the number of guesses remaining, if the guess was correct
         """
@@ -59,35 +60,41 @@ class Board:
             self.__guessPointer += 1
         return (result, self.getRemainingGuesses(), codeCorrect)
 
-    def __genGuessResult(self, guess: list) -> list:
+    def __genGuessResult(self, guess: list[int]) -> list:
         """
         Returns a list of the result of a guess
         """
         # checks that the guess is in the correct format
-        if len(guess) != self.__lenOfGuess:
+        if self.__code == None:
+            raise ValueError("Code is not set")
+        elif len(guess) != self.__lenOfGuess:
             raise ValueError("Guess length is not long enough")
         elif not all(num in list(self.__colours.keys()) for num in guess):
             raise ValueError("Guess contains invalid colour")
-        # calculates the result
-        result = []
-        for i in range(len(guess)):
-            if guess[i] == self.__code[i]:
-                result.append(1)
-            elif guess[i] in self.__code:
-                result.append(2)
-        return result
-        # DOES NOT WORK FOR DUPLICATES
+        else:
+            # calculates the result
+            assert (
+                self.__code is not None
+            )  # mypy bug -> tells mypy that self.__code is not None
+            result = []
+            for i in range(len(guess)):
+                if guess[i] == self.__code[i]:
+                    result.append(1)
+                elif guess[i] in self.__code:
+                    result.append(2)
+            return result
+            # DOES NOT WORK FOR DUPLICATES
 
-    def getGuesses(self) -> list:
+    def getGuesses(self) -> list[list[int]]:
         """
-        returns the already made guesses
+        returns the already made guessess
         """
         guesses = []
         for i in range(self.__guessPointer):
             guesses.append(self.__guesses[i])
-        return guesses
+        return guesses  # type: ignore [return-value] # mypy cannot detect that guesses will contain only integers
 
-    def setCode(self, code: list = None):
+    def setCode(self, code: list | None = None):
         """
         Sets the code for the board
         """
@@ -111,8 +118,8 @@ class Board:
                 raise ValueError("Code contains duplicates")
             else:
                 self.__code = code
-            
-    def getCode(self) -> list:
+
+    def getCode(self) -> list | None:
         return self.__code
 
     def __str__(self) -> str:
@@ -140,19 +147,38 @@ class Game:
         self.__player2 = player2
         self.__currentPlayer = player1
         self.__winner = None
-        self.__board = self.__createBoard(length, numGuesses, duplicatesAllowed, colours)
+        self.__board = self.__createBoard(
+            length, numGuesses, duplicatesAllowed, colours
+        )
 
-    def __createBoard(self, length: int, numGuesses: int, duplicatesAllowed: bool, colours: dict) -> Board:
+    def __createBoard(
+        self, length: int, numGuesses: int, duplicatesAllowed: bool, colours: dict
+    ) -> Board:
         """
         Creates and returns a board
         """
-        return Board(length = length, totalGuesses = numGuesses, duplicatesAllowed = duplicatesAllowed, colours = colours)
+        return Board(
+            length=length,
+            totalGuesses=numGuesses,
+            duplicatesAllowed=duplicatesAllowed,
+            colours=colours,
+        )
 
     def getCurrentPlayer(self) -> Player:
         return self.__currentPlayer
 
-    def makeGuess(self, guess: list) -> tuple:
+    def switchPlayer(self):
         """
-        Makes a guess and returns a list of the result
+        Switches the current player
         """
+        if self.__currentPlayer == self.__player1:
+            self.__currentPlayer = self.__player2
+        else:
+            self.__currentPlayer = self.__player1
+
+    def makeGuess(self) -> tuple[list, int, bool]:
+        """
+        Gets a move from the current player and makes a guess
+        """
+        guess = self.__currentPlayer.getMove()
         return self.__board.makeGuess(guess)
