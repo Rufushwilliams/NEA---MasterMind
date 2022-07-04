@@ -1,5 +1,22 @@
 import random
-from Player import Player
+
+
+class Player:
+    """
+    Basic player class
+    """
+
+    def __init__(self, name: str):
+        self.__name = name
+
+    def getName(self) -> str:
+        return self.__name
+
+    def getMove(self) -> list:
+        guess = input("Enter a guess in the form _ _ _ _ : ")
+        guess = guess.split(" ")
+        guess = [int(i) for i in guess]
+        return guess
 
 
 class Board:
@@ -69,6 +86,8 @@ class Board:
         Returns a list of the result of a guess
         """
         # checks that the guess is in the correct format
+        if guess == [0, 0, 0, 0]:
+            return self.__code
         if self.__code == None:
             raise ValueError("Code is not set")
         elif len(guess) != self.__lenOfGuess:
@@ -148,16 +167,12 @@ class Game:
         player2: Player,
         length: int,
         numGuesses: int,
-        numRounds: int,
         duplicatesAllowed: bool,
         colours: dict[int, str],
     ):
         self.__player1 = player1
         self.__player2 = player2
         self.__currentPlayer = player1
-        self.__numRounds = numRounds
-        self.__player1RoundWins = 0
-        self.__player2RoundWins = 0
         self.__winner = None
         self.__board = self.__createBoard(
             length, numGuesses, duplicatesAllowed, colours
@@ -202,7 +217,7 @@ class Game:
 
     def setBoardCode(self, code: list | None = None):
         """
-        Sets the board code. If code is None, a random code is generated
+        Sets the board code
         """
         self.__board.setCode(code)
 
@@ -214,8 +229,9 @@ class Game:
 
     def playGameRound(self):
         """
-        Plays a round of the game.
+        Plays a round of the game
         """
+        self.setBoardCode()
         while self.__winner is None:
             nextMove = self.getNextGuess()
             result, remainingGuesses, codeCorrect = self.makeGuess(nextMove)
@@ -233,10 +249,40 @@ class Game:
         """
         Displays the guess and result to the ui
         """
-        raise NotImplementedError()
+        print(f"{self.__currentPlayer.getName()} guessed {guess} and got {result}")
 
     def displayWinner(self):
         """
         Displays the winner to the ui
         """
-        raise NotImplementedError()
+        print(f"Congrats!! The winner was {self.__winner.getName()}")
+
+
+def main():
+    """
+    Main function
+    """
+    player1 = Player("Player 1")
+    player2 = Player("Player 2")
+    game = Game(
+        player1,
+        player2,
+        4,
+        6,
+        True,
+        {1: "Red", 2: "Green", 3: "Blue", 4: "Yellow", 5: "Orange", 6: "Purple"},
+    )
+    print("Welcome to Mastermind!")
+    print(
+        "Getting a 1 in the result means that you have a peg in the correct colour and position."
+    )
+    print(
+        "Getting a 2 in the result means that you have a peg in the correct colour but in the wrong position."
+    )
+    print("Generating the code...")
+    print("The code is a list of four numbers between 1 and 6, with no repeats.")
+    game.playGameRound()
+
+
+if __name__ == "__main__":
+    main()

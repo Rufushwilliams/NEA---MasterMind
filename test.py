@@ -69,11 +69,19 @@ class Board:
             raise ValueError("Guess contains invalid colour")
         # calculates the result
         result = []
+        tempCode = self.__code.copy()
+        tempGuess = guess.copy()
         for i in range(len(guess)):
-            if guess[i] == self.__code[i]:
+            if self.__code[i] == guess[i]:
                 result.append(1)
-            elif guess[i] in self.__code:
+                tempCode[i] = None
+                tempGuess[i] = None
+        tempGuess = [x for x in tempGuess if x is not None]
+        tempCode = [x for x in tempCode if x is not None]
+        for i in range(len(tempGuess)):
+            if tempGuess[i] in tempCode:
                 result.append(2)
+                tempCode.pop(tempCode.index(tempGuess[i]))
         return result
 
     def getGuesses(self) -> list:
@@ -121,8 +129,12 @@ class Board:
 
 
 print("Welcome to Mastermind!")
-print("Getting a 1 in the result means that you have a peg in the correct colour and position.")
-print("Getting a 2 in the result means that you have a peg in the correct colour but in the wrong position.")
+print(
+    "Getting a 1 in the result means that you have a peg in the correct colour and position."
+)
+print(
+    "Getting a 2 in the result means that you have a peg in the correct colour but in the wrong position."
+)
 print("Generating the code...")
 print("The code is a list of four numbers between 1 and 6, with no repeats.")
 board = Board(4, 6)
@@ -136,8 +148,12 @@ while True:
         elif guess == "show guesses":
             print(board.getGuesses())
             continue
-        guess = guess.split(" ")
-        guess = [int(i) for i in guess]
+        try:
+            guess = guess.split(" ")
+            guess = [int(i) for i in guess]
+        except:
+            print("Invalid guess")
+            continue
         if len(guess) != board.getLenOfGuess():
             print("Guess length is not long enough")
         elif not all(num in list(board.getColours().keys()) for num in guess):
@@ -151,4 +167,5 @@ while True:
         break
     if remainingGuesses == 0:
         print("You lost")
+        print(f"The code was {board.getCode()}")
         break

@@ -1,16 +1,4 @@
-class Statistics:
-    """
-    Statistics class that stores the statistics of a human player
-    """
-
-    def __init__(self):
-        pass
-
-    def getStats(self):
-        pass
-
-    def setStats(self):
-        pass
+from __future__ import annotations
 
 
 class Player:
@@ -19,6 +7,9 @@ class Player:
     """
 
     def __init__(self):
+        raise NotImplementedError()
+
+    def getName(self) -> str:
         raise NotImplementedError()
 
     def getMove(self) -> list:
@@ -63,3 +54,18 @@ class NetworkingHuman(Human):
     def __init__(self):
         super.__init__(self)
         raise NotImplementedError()
+
+
+class Statistics:
+    """
+    Statistics class that stores the statistics of a human player
+    """
+
+    def __init__(self):
+        pass
+
+    def getStats(self):
+        pass
+
+    def setStats(self):
+        pass
