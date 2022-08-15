@@ -1,4 +1,5 @@
 from __future__ import annotations
+from Board import Board
 
 
 class Player:
@@ -50,13 +51,13 @@ class LocalHuman(Human):
         super.__init__(self)
         raise NotImplementedError()
 
-    def displayGuess(self, guess: list, result: list):
+    def displayBoard(self, board: Board):
         """
-        Displays the guess and result to the ui.
+        Displays the board to the ui
         Abstract method
         """
         raise NotImplementedError()
-    
+
     def displayWinner(self, winner: Player):
         """
         Displays the winner to the ui
@@ -74,26 +75,24 @@ class Terminal(LocalHuman):
     def __init__(self):
         super.__init__(self)
         raise NotImplementedError()
-    
+
     def getMove(self) -> list:
         """
         Returns the players next guess.
         """
         raise NotImplementedError()
-    
-    def displayGuess(self, guess: list, result: list):
+
+    def displayBoard(self, board: Board):
         """
-        Displays the guess and result to the ui
+        Displays the board to the ui
         """
-        print(f"You guessed {guess} and got {result}")
-        #raise NotImplementedError()
-    
+        print(board)
+
     def displayWinner(self, winner: Player):
         """
         Displays the winner to the ui
         """
         print(f"Congrats!! The winner was {winner.getName()}")
-        #raise NotImplementedError()
 
 
 class GUI(LocalHuman):
