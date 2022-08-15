@@ -58,7 +58,7 @@ class Terminal(UI):
         self,
         length: int = 4,
         numGuesses: int = 6,
-        numRounds: int = 1,
+        numRounds: int = 3,
         duplicatesAllowed: bool = False,
     ):
         super().__init__(length, numGuesses, numRounds, duplicatesAllowed)
@@ -99,7 +99,7 @@ class Terminal(UI):
             print("Please enter y or n")
         self._duplicatesAllowed = duplicates
         print("-------------------------------------------------------")
-        print("How many rounds do you want to play? (default 1)")
+        print("How many rounds do you want to play? (default 3)")
         while True:
             rounds = input()
             if rounds.isdigit():
@@ -141,7 +141,20 @@ class Terminal(UI):
                     continue
                 case "2":
                     print("You have chosen to play against another human")
-                    raise NotImplementedError()
+                    name = input("Please enter the name of player 1: ")
+                    player1 = Player.Terminal(name)
+                    name = input("Please enter the name of player 2: ")
+                    player2 = Player.Terminal(name)
+                    game = Game(
+                        player1,
+                        player2,
+                        self._length,
+                        self._numGuesses,
+                        self._numRounds,
+                        self._duplicatesAllowed,
+                    )
+                    game.run()
+                    continue
                 case "3":
                     self.setup()
                     continue

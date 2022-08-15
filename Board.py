@@ -83,13 +83,13 @@ class Board:
         else:
             # calculates the result
             result = []
-            tempCode = self.__code.copy()  # type: ignore
+            tempCode = self.__code.copy()
             tempGuess = guess.copy()
             for i in range(len(guess)):
-                if self.__code[i] == guess[i]:  # type: ignore
+                if self.__code[i] == guess[i]:
                     result.append(1)
-                    tempCode[i] = None  # type: ignore
-                    tempGuess[i] = None  # type: ignore
+                    tempCode[i] = None
+                    tempGuess[i] = None
             tempGuess = [x for x in tempGuess if x is not None]
             tempCode = [x for x in tempCode if x is not None]
             for i in range(len(tempGuess)):
@@ -105,7 +105,7 @@ class Board:
         guesses = []
         for i in range(self.__guessPointer):
             guesses.append(self.__guesses[i])
-        return guesses  # type: ignore [return-value] # mypy cannot detect that guesses will contain only integers
+        return guesses
 
     def getResults(self) -> list[list[int]]:
         """
@@ -114,7 +114,7 @@ class Board:
         results = []
         for i in range(self.__guessPointer):
             results.append(self.__results[i])
-        return results  # type: ignore [return-value] # mypy cannot detect that guesses will contain only integers
+        return results
 
     def setCode(self, code: list | None = None):
         """
@@ -151,7 +151,9 @@ class Board:
         guesses = self.getGuesses()
         results = self.getResults()
         output = ""
+        output += "-------------------------------------------------------" + "\n"
         for i in range(len(guesses)):
             output += str(guesses[i]) + "  " + str(results[i]) + "\n"
         output += "Remaining guesses: " + str(self.getRemainingGuesses()) + "\n"
+        output += "-------------------------------------------------------"
         return output

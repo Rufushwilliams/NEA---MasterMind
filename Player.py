@@ -28,7 +28,7 @@ class Player(ABC):
         """
         raise NotImplementedError()
 
-    def displayBoard(self, board: Board):
+    def displayBoard(self, board: Board, code: list = None):
         """
         Displays the board to the player.
         """
@@ -60,7 +60,12 @@ class AI(Player):
         """
         Returns the players next guess.
         """
-        pass
+        # TODO: Implement AI
+        from random import randint
+        from time import sleep
+
+        sleep(1)
+        return [randint(1, list(coloursAllowed.keys())[-1]) for _ in range(length)]
 
     def getCode(self, length: int, coloursAllowed: dict[int, str]) -> list:
         """
@@ -90,7 +95,7 @@ class LocalHuman(Human, ABC):
         pass
 
     @abstractmethod
-    def displayBoard(self, board: Board):
+    def displayBoard(self, board: Board, code: list = None):
         """
         Displays the board to the ui
         """
@@ -155,11 +160,14 @@ class Terminal(LocalHuman):
             print("Please enter a valid code")
         return [int(i) for i in code]
 
-    def displayBoard(self, board: Board):
+    def displayBoard(self, board: Board, code: list = None):
         """
         Displays the board to the ui
         """
         print(board)
+        if code:
+            print(f"The code was {code}")
+        print()
 
     def displayRoundWinner(self, winner: Player):
         """

@@ -1,4 +1,4 @@
-from Player import Player
+from Player import Player, Terminal
 from Board import Board
 
 
@@ -20,13 +20,15 @@ class Game:
         self.__player1 = player1
         self.__player2 = player2
         self.__currentPlayer = player1
+        self.__length = length
+        self.__numGuesses = numGuesses
         self.__numRounds = numRounds
+        self.__duplicatesAllowed = duplicatesAllowed
+        self.__colours = colours
         self.__player1RoundWins = 0
         self.__player2RoundWins = 0
         self.__winner = None
-        self.__board = self.__createBoard(
-            length, numGuesses, duplicatesAllowed, colours
-        )
+        self.__board = None
 
     def __createBoard(
         self,
@@ -52,7 +54,7 @@ class Game:
         return self.__board
 
     def getWinner(self) -> Player:
-        return self.__winner  # type: ignore [return-value] # mypy cannot detect that self.__winner will be a Player
+        return self.__winner
 
     def switchPlayer(self):
         """
@@ -102,6 +104,9 @@ class Game:
         """
         Plays a round of the game.
         """
+        self.__board = self.__createBoard(
+            self.__length, self.__numGuesses, self.__duplicatesAllowed, self.__colours
+        )
         self.setBoardCode()
         roundWinner = None
         while roundWinner is None:
@@ -115,9 +120,9 @@ class Game:
                     roundWinner = self.__player2
                 else:
                     roundWinner = self.__player1
+                break
             self.displayBoard()
-        if remainingGuesses != 0:
-            self.displayBoard()
+        self.displayBoard(self.__board.getCode())
         self.displayRoundWinner(roundWinner)
         # add 1 to the winner's round win count
         if roundWinner == self.__player1:
@@ -125,29 +130,38 @@ class Game:
         else:
             self.__player2RoundWins += 1
 
-    def displayBoard(self):
+    def displayBoard(self, code: list = None):
         """
         Displays the board to the ui.
         Calls both players' displayBoard method
         """
-        self.__player1.displayBoard(self.__board)
-        self.__player2.displayBoard(self.__board)
+        if type(self.__player1) == Terminal and type(self.__player2) == Terminal:
+            self.__player1.displayBoard(self.__board, code)
+        else:
+            self.__player1.displayBoard(self.__board, code)
+            self.__player2.displayBoard(self.__board, code)
 
     def displayRoundWinner(self, roundWinner: Player):
         """
         Displays the winner of the round to the ui.
         Calls both players' displayRoundWinner method
         """
-        self.__player1.displayRoundWinner(roundWinner)
-        self.__player2.displayRoundWinner(roundWinner)
+        if type(self.__player1) == Terminal and type(self.__player2) == Terminal:
+            self.__player1.displayRoundWinner(roundWinner)
+        else:
+            self.__player1.displayRoundWinner(roundWinner)
+            self.__player2.displayRoundWinner(roundWinner)
 
     def displayWinner(self):
         """
         Displays the winner to the ui.
         Calls both players' displayWinner method
         """
-        self.__player1.displayWinner(self.__winner)
-        self.__player2.displayWinner(self.__winner)
+        if type(self.__player1) == Terminal and type(self.__player2) == Terminal:
+            self.__player1.displayWinner(self.__winner)
+        else:
+            self.__player1.displayWinner(self.__winner)
+            self.__player2.displayWinner(self.__winner)
 
     def run(self):
         """
@@ -156,6 +170,7 @@ class Game:
         for i in range(self.__numRounds):
             print("------------------------------")
             print("Round " + str(i + 1))
+            print("------------------------------")
             self.playGameRound()
             self.switchPlayer()
         if self.__player1RoundWins > self.__player2RoundWins:
