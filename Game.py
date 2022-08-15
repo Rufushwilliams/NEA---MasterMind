@@ -231,12 +231,14 @@ class Game:
 
     def displayGuess(self, guess: list, result: list):
         """
-        Displays the guess and result to the ui
+        Displays the guess and result to the ui.
+        Calls the current player's displayGuess method
         """
-        raise NotImplementedError()
+        self.__currentPlayer.displayGuess(guess, result)
 
     def displayWinner(self):
         """
-        Displays the winner to the ui
+        Displays the winner to the ui.
+        Calls the current player's displayWinner method
         """
-        raise NotImplementedError()
+        self.__currentPlayer.displayWinner(self.__winner)
