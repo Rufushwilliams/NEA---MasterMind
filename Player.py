@@ -15,31 +15,31 @@ class Player(ABC):
         return self._name
 
     @abstractmethod
-    def getMove(self) -> list:
+    def getMove(self, length: int, coloursAllowed: dict[int, str]) -> list:
         """
         Returns the players next guess.
         """
         raise NotImplementedError()
-    
+
     @abstractmethod
-    def getCode(self) -> list:
+    def getCode(self, length: int, coloursAllowed: dict[int, str]) -> list:
         """
         Returns the players code.
         """
         raise NotImplementedError()
-    
+
     def displayBoard(self, board: Board):
         """
         Displays the board to the player.
         """
         pass
-    
+
     def displayRoundWinner(self, winner: Player):
         """
         Displays the winner of the round.
         """
         pass
-    
+
     def displayWinner(self, winner: Player | None):
         """
         Displays the winner of the game.
@@ -56,13 +56,13 @@ class AI(Player):
         super().__init__(name)
         pass
 
-    def getMove(self) -> list:
+    def getMove(self, length: int, coloursAllowed: dict[int, str]) -> list:
         """
         Returns the players next guess.
         """
         pass
 
-    def getCode(self) -> list:
+    def getCode(self, length: int, coloursAllowed: dict[int, str]) -> list:
         """
         Returns the players code.
         """
@@ -95,7 +95,7 @@ class LocalHuman(Human, ABC):
         Displays the board to the ui
         """
         raise NotImplementedError()
-    
+
     @abstractmethod
     def displayRoundWinner(self, winner: Player):
         """
@@ -129,23 +129,31 @@ class Terminal(LocalHuman):
         print(f"{self._name}, please enter your guess of {length} digits long")
         while True:
             guess = input()
-            if guess.isdigit() and len(guess) == length and all(int(i) in colours for i in guess):
+            if (
+                guess.isdigit()
+                and len(guess) == length
+                and all(int(i) in colours for i in guess)
+            ):
                 break
             print("Please enter a valid guess")
         return [int(i) for i in guess]
-    
-    def getCode(self) -> list:
+
+    def getCode(self, length: int, coloursAllowed: dict[int, str]) -> list:
         """
         Returns the players code.
         """
-        raise NotImplementedError()
-        # print("Please enter your code")
-        # while True:
-        #     code = input()
-        #     if len(code) == 4:
-        #         break
-        #     print("Please enter a valid code")
-        # return list(code)
+        colours = list(coloursAllowed.keys())
+        print(f"{self._name}, please enter your code of {length} digits long")
+        while True:
+            code = input()
+            if (
+                code.isdigit()
+                and len(code) == length
+                and all(int(i) in colours for i in code)
+            ):
+                break
+            print("Please enter a valid code")
+        return [int(i) for i in code]
 
     def displayBoard(self, board: Board):
         """

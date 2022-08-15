@@ -29,7 +29,11 @@ class Game:
         )
 
     def __createBoard(
-        self, length: int, numGuesses: int, duplicatesAllowed: bool, colours: dict
+        self,
+        length: int,
+        numGuesses: int,
+        duplicatesAllowed: bool,
+        colours: dict[int, str] | None,
     ) -> Board:
         """
         Creates and returns a board
@@ -63,7 +67,9 @@ class Game:
         """
         Returns the current players next guess
         """
-        return self.__currentPlayer.getMove(self.__board.getLenOfGuess(), self.__board.getColours())
+        return self.__currentPlayer.getMove(
+            self.__board.getLenOfGuess(), self.__board.getColours()
+        )
 
     def setBoardCode(self, random: bool = False):
         """
@@ -72,9 +78,17 @@ class Game:
         """
         if not random:
             if self.__currentPlayer == self.__player1:
-                self.__board.setCode(self.__player2.getCode())
+                self.__board.setCode(
+                    self.__player2.getCode(
+                        self.__board.getLenOfGuess(), self.__board.getColours()
+                    )
+                )
             else:
-                self.__board.setCode(self.__player1.getCode())
+                self.__board.setCode(
+                    self.__player1.getCode(
+                        self.__board.getLenOfGuess(), self.__board.getColours()
+                    )
+                )
         else:
             self.__board.setCode()
 
@@ -134,7 +148,7 @@ class Game:
         """
         self.__player1.displayWinner(self.__winner)
         self.__player2.displayWinner(self.__winner)
-    
+
     def run(self):
         """
         Runs the game

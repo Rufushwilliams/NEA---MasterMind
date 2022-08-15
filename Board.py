@@ -21,7 +21,7 @@ class Board:
         length: int = 4,
         totalGuesses: int = 6,
         duplicatesAllowed: bool = False,
-        colours: dict[int, str] = __COLOURS,
+        colours: dict[int, str] | None = __COLOURS,
         resultColours: dict[int, str] = __RESULTCOLOURS,
     ):
         self.__lenOfGuess = length

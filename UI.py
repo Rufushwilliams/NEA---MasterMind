@@ -2,11 +2,19 @@ from abc import ABC, abstractmethod
 from Game import Game
 import Player
 
+
 class UI(ABC):
     """
     Basic UI class used to display the game setup to the user
     """
-    def __init__(self, length: int = 4, numGuesses: int = 6, numRounds: int = 1, duplicatesAllowed: bool = False):
+
+    def __init__(
+        self,
+        length: int = 4,
+        numGuesses: int = 6,
+        numRounds: int = 1,
+        duplicatesAllowed: bool = False,
+    ):
         self._length = length
         self._numGuesses = numGuesses
         self._numRounds = numRounds
@@ -24,7 +32,14 @@ class GUI(UI):
     """
     GUI class that inherits from the UI class
     """
-    def __init__(self, length: int = 4, numGuesses: int = 6, numRounds: int = 1, duplicatesAllowed: bool = False):
+
+    def __init__(
+        self,
+        length: int = 4,
+        numGuesses: int = 6,
+        numRounds: int = 1,
+        duplicatesAllowed: bool = False,
+    ):
         super().__init__(length, numGuesses, numRounds, duplicatesAllowed)
 
     def run(self):
@@ -39,9 +54,14 @@ class Terminal(UI):
     Terminal class that inherits from the UI class
     """
 
-    def __init__(self, length: int = 4, numGuesses: int = 6, numRounds: int = 1, duplicatesAllowed: bool = False):
+    def __init__(
+        self,
+        length: int = 4,
+        numGuesses: int = 6,
+        numRounds: int = 1,
+        duplicatesAllowed: bool = False,
+    ):
         super().__init__(length, numGuesses, numRounds, duplicatesAllowed)
-
 
     def setup(self):
         """
@@ -109,7 +129,14 @@ class Terminal(UI):
                     name = input("Please enter your name: ")
                     player1 = Player.Terminal(name)
                     player2 = Player.AI("Computer")
-                    game = Game(player1, player2, self._length, self._numGuesses, self._numRounds, self._duplicatesAllowed)
+                    game = Game(
+                        player1,
+                        player2,
+                        self._length,
+                        self._numGuesses,
+                        self._numRounds,
+                        self._duplicatesAllowed,
+                    )
                     game.run()
                     continue
                 case "2":
