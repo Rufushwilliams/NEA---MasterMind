@@ -11,11 +11,11 @@ class Game:
         self,
         player1: Player,
         player2: Player,
-        length: int,
-        numGuesses: int,
-        numRounds: int,
-        duplicatesAllowed: bool,
-        colours: dict[int, str],
+        length: int = 4,
+        numGuesses: int = 6,
+        numRounds: int = 1,
+        duplicatesAllowed: bool = False,
+        colours: dict[int, str] = None,
     ):
         self.__player1 = player1
         self.__player2 = player2
@@ -63,13 +63,20 @@ class Game:
         """
         Returns the current players next guess
         """
-        return self.__currentPlayer.getMove()
+        return self.__currentPlayer.getMove(self.__board.getLenOfGuess(), self.__board.getColours())
 
-    def setBoardCode(self, code: list | None = None):
+    def setBoardCode(self, random: bool = False):
         """
-        Sets the board code. If code is None, a random code is generated
+        Sets the board code.
+        Gets the code from the player who's turn it is not.
         """
-        self.__board.setCode(code)
+        if not random:
+            if self.__currentPlayer == self.__player1:
+                self.__board.setCode(self.__player2.getCode())
+            else:
+                self.__board.setCode(self.__player1.getCode())
+        else:
+            self.__board.setCode()
 
     def makeGuess(self, guess: list) -> tuple[list, int, bool]:
         """
@@ -81,38 +88,66 @@ class Game:
         """
         Plays a round of the game.
         """
-        while self.__winner is None:
+        self.setBoardCode()
+        roundWinner = None
+        while roundWinner is None:
             nextMove = self.getNextGuess()
             result, remainingGuesses, codeCorrect = self.makeGuess(nextMove)
             if codeCorrect:
-                self.__winner = self.__currentPlayer
+                roundWinner = self.__currentPlayer
                 break
             if remainingGuesses == 0:
                 if self.__currentPlayer == self.__player1:
-                    self.__winner = self.__player2
+                    roundWinner = self.__player2
                 else:
-                    self.__winner = self.__player1
+                    roundWinner = self.__player1
             self.displayBoard()
-        self.displayBoard()
-        self.displayWinner()
+        if remainingGuesses != 0:
+            self.displayBoard()
+        self.displayRoundWinner(roundWinner)
+        # add 1 to the winner's round win count
+        if roundWinner == self.__player1:
+            self.__player1RoundWins += 1
+        else:
+            self.__player2RoundWins += 1
 
     def displayBoard(self):
         """
         Displays the board to the ui.
-        Calls the current player's displayBoard method
+        Calls both players' displayBoard method
         """
-        self.__currentPlayer.displayBoard(self.__board)
+        self.__player1.displayBoard(self.__board)
+        self.__player2.displayBoard(self.__board)
 
-    def displayGuess(self, guess: list, result: list):
+    def displayRoundWinner(self, roundWinner: Player):
         """
-        Displays the guess and result to the ui.
-        Calls the current player's displayGuess method
+        Displays the winner of the round to the ui.
+        Calls both players' displayRoundWinner method
         """
-        self.__currentPlayer.displayGuess(guess, result)
+        self.__player1.displayRoundWinner(roundWinner)
+        self.__player2.displayRoundWinner(roundWinner)
 
     def displayWinner(self):
         """
         Displays the winner to the ui.
-        Calls the current player's displayWinner method
+        Calls both players' displayWinner method
         """
-        self.__currentPlayer.displayWinner(self.__winner)
+        self.__player1.displayWinner(self.__winner)
+        self.__player2.displayWinner(self.__winner)
+    
+    def run(self):
+        """
+        Runs the game
+        """
+        for i in range(self.__numRounds):
+            print("------------------------------")
+            print("Round " + str(i + 1))
+            self.playGameRound()
+            self.switchPlayer()
+        if self.__player1RoundWins > self.__player2RoundWins:
+            self.__winner = self.__player1
+        elif self.__player1RoundWins < self.__player2RoundWins:
+            self.__winner = self.__player2
+        else:
+            self.__winner = None
+        self.displayWinner()

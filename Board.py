@@ -18,7 +18,7 @@ class Board:
 
     def __init__(
         self,
-        length: int,
+        length: int = 4,
         totalGuesses: int = 6,
         duplicatesAllowed: bool = False,
         colours: dict[int, str] = __COLOURS,
@@ -27,7 +27,9 @@ class Board:
         self.__lenOfGuess = length
         self.__totalGuesses = totalGuesses
         self.__duplicatesAllowed = duplicatesAllowed
-        self.__colours = colours
+        self.__colours = self.__COLOURS
+        if colours is not None:
+            self.__colours = colours
         self.__resultColours = resultColours
         self.__guessPointer = 0
         self.__guesses: list[list[int | None]] = [
@@ -116,7 +118,8 @@ class Board:
 
     def setCode(self, code: list | None = None):
         """
-        Sets the code for the board
+        Sets the code for the board.
+        If no code is given, a random code is generated
         """
         if code is None:
             # generate random code
