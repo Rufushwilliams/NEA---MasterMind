@@ -13,7 +13,7 @@ class UI(ABC):
         length: int = 4,
         numGuesses: int = 6,
         numRounds: int = 1,
-        duplicatesAllowed: bool = False,
+        duplicatesAllowed: bool = True,
     ):
         self._length = length
         self._numGuesses = numGuesses
@@ -87,7 +87,7 @@ class Terminal(UI):
             print("Please enter a valid number")
         self._numGuesses = int(guesses)
         print("-------------------------------------------------------")
-        print("Do you want to allow duplicates? (y/n) (default n)")
+        print("Do you want to allow duplicates? (y/n) (default y)")
         while True:
             duplicates = input()
             if duplicates.lower() in ["y", "n"]:

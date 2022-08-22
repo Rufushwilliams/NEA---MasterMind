@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from itertools import product
 from Board import Board
 
 
@@ -60,18 +61,116 @@ class AI(Player):
         """
         Returns the players next guess.
         """
-        # TODO: Implement AI
         from random import randint
         from time import sleep
 
         sleep(1)
         return [randint(1, list(coloursAllowed.keys())[-1]) for _ in range(length)]
 
+        # TODO: Implement Knuth's algorithm
+
     def getCode(self, length: int, coloursAllowed: dict[int, str]) -> list:
         """
         Returns the players code.
         """
         pass
+
+
+class knuthsAlgorithm:
+    """
+    A class that implements the knuths algorithm for generating guesses.
+    Knuths algorithm for generating guesses:
+        1. create a set C of all possible codes
+        2. create a set S of all possible guesses
+        3. play the next guess
+        4. if the guess is correct, terminate
+        5. otherwise remove from S all guesses that would not give the same response if the current guess was the code
+        6. calculate the next guess using minimax -> choose the guess that has the least worse response score
+        7. repeat from step 3
+    """
+
+    def __init__(self, lengthOfCode: int, colours: dict[int, str]):
+        self.__previousGuess = None
+        self.__lengthOfCode = lengthOfCode
+        self.__colourOptions = list(colours.keys())
+        # create a set S of all possible guesses
+        self.__S = set(product(self.__colourOptions, repeat=lengthOfCode))
+        # create a set C of all possible codes
+        self.__C = frozenset(self.__S)
+
+    def getNextGuess(self, previousResponse: list[int] = None) -> list[int]:
+        """
+        Gets the next guess using the knuths algorithm.
+        """
+        if self.__previousGuess is None:
+            self.__previousGuess = self.__genInitialGuess()
+            return self.__previousGuess
+        elif len(self.__S) == 1:
+            return list(self.__S)[0]
+        elif len(self.__S) == 0:
+            raise ValueError("No possible guesses")
+        elif previousResponse is None:
+            raise ValueError("previousResponse cannot be None")
+        else:
+            # remove from S all guesses that would not give the same response if the current guess was the code
+            self.__S.difference_update(
+                self.__getGuessesThatWouldNotGiveSameResponse(
+                    self.__previousGuess, previousResponse
+                )
+            )
+            # calculate the next guess using minimax -> choose the guess that has the least worse response score
+            self.__previousGuess = self.__genNextGuess()
+            return self.__previousGuess
+
+    def __genInitialGuess(self) -> list[int]:
+        """
+        Calculates the initial guess
+        """
+        if self.__lengthOfCode == 4 and len(self.__colourOptions) == 6:
+            return [1, 1, 2, 2]  # 1122 for a MM(4,6) game
+        else:
+            raise NotImplementedError()
+
+    def __getGuessesThatWouldNotGiveSameResponse(
+        self, guess: list[int], previousResponse: list[int]
+    ) -> set[list[int]]:
+        """
+        Returns a set of all guesses that would not give the same response as the previous guess
+        """
+        guessesThatWouldNotGiveSameResponse = set()
+        for code in self.__S:
+            # turn the code tuple into a list
+            code = list(code)
+            response = self.__getResponse(guess, code)
+            if response != previousResponse:
+                guessesThatWouldNotGiveSameResponse.add(code)
+        return guessesThatWouldNotGiveSameResponse
+
+    def __getResponse(self, guess: list[int], code: list[int]) -> list:
+        """
+        Returns a list of the result of the guess against the code
+        """
+        result = []
+        tempCode = code.copy()
+        tempGuess = guess.copy()
+        for i in range(len(guess)):
+            if code[i] == guess[i]:
+                result.append(1)
+                tempCode[i] = None
+                tempGuess[i] = None
+        tempGuess = [x for x in tempGuess if x is not None]
+        tempCode = [x for x in tempCode if x is not None]
+        for i in range(len(tempGuess)):
+            if tempGuess[i] in tempCode:
+                result.append(2)
+                tempCode.pop(tempCode.index(tempGuess[i]))
+        return result
+
+    def __genNextGuess(self) -> list[int]:
+        """
+        Calculates the next guess using minimax.
+        """
+        raise NotImplementedError()
 
 
 class Human(Player, ABC):
