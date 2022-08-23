@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from time import time
 from Game import Game
 import Player
 
@@ -119,48 +120,67 @@ class Terminal(UI):
             print("Welcome to Mastermind")
             print("Enter 1 to play against a computer")
             print("Enter 2 to play against another human")
-            print("Enter 3 edit game settings")
-            print("Enter 4 to exit")
+            print("Enter 3 to play timed mode")
+            print("Enter 4 edit game settings")
+            print("Enter 5 to exit")
             print("-------------------------------------------------------")
             choice = input("Enter your choice: ")
-            match choice:
-                case "1":
-                    print("You have chosen to play against a computer")
-                    name = input("Please enter your name: ")
-                    player1 = Player.Terminal(name)
-                    player2 = Player.AI("Computer")
-                    game = Game(
-                        player1,
-                        player2,
-                        self._length,
-                        self._numGuesses,
-                        self._numRounds,
-                        self._duplicatesAllowed,
-                    )
-                    game.run()
-                    continue
-                case "2":
-                    print("You have chosen to play against another human")
-                    name = input("Please enter the name of player 1: ")
-                    player1 = Player.Terminal(name)
-                    name = input("Please enter the name of player 2: ")
-                    player2 = Player.Terminal(name)
-                    game = Game(
-                        player1,
-                        player2,
-                        self._length,
-                        self._numGuesses,
-                        self._numRounds,
-                        self._duplicatesAllowed,
-                    )
-                    game.run()
-                    continue
-                case "3":
-                    self.setup()
-                    continue
-                case "4":
-                    print("Exiting game...")
-                    quit(0)
-                case _:
-                    print("Invalid choice")
-                    continue
+            if choice == "1":
+                print("You have chosen to play against a computer")
+                name = input("Please enter your name: ")
+                player1 = Player.Terminal(name)
+                player2 = Player.AI("Computer")
+                game = Game(
+                    player1,
+                    player2,
+                    self._length,
+                    self._numGuesses,
+                    self._numRounds,
+                    self._duplicatesAllowed,
+                )
+                game.run()
+                continue
+            elif choice == "2":
+                print("You have chosen to play against another human")
+                name = input("Please enter the name of player 1: ")
+                player1 = Player.Terminal(name)
+                name = input("Please enter the name of player 2: ")
+                player2 = Player.Terminal(name)
+                game = Game(
+                    player1,
+                    player2,
+                    self._length,
+                    self._numGuesses,
+                    self._numRounds,
+                    self._duplicatesAllowed,
+                )
+                game.run()
+                continue
+            elif choice == "3":
+                print("You have chosen to play timed mode")
+                name = input("Please enter your name: ")
+                player1 = Player.Terminal(name)
+                player2 = Player.AI("Computer")
+                game = Game(
+                    player1,
+                    player2,
+                    self._length,
+                    self._numGuesses,
+                    1,
+                    self._duplicatesAllowed,
+                )
+                startTime = time()
+                game.run()
+                endTime = time()
+                print("-------------------------------------------------------")
+                print(f"You have finished in {endTime-startTime} seconds")
+                continue
+            elif choice == "4":
+                self.setup()
+                continue
+            elif choice == "5":
+                print("Exiting game...")
+                quit(0)
+            else:
+                print("Invalid choice")
+                continue

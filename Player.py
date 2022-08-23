@@ -57,7 +57,7 @@ class AI(Player):
         super().__init__(name)
         self.__board = None
         self.__algorithm = None
-    
+
     def __genAlgorithm(self, length: int, coloursAllowed: dict[int, str]):
         """
         Generates an instance of the algorithm for the AI to use.
@@ -90,7 +90,7 @@ class AI(Player):
         """
         self.__board = None
         self.__algorithm = None
-    
+
     def __getPreviousResponse(self) -> list:
         """
         Returns the previous response from the board. If there is no board, it returns None.
@@ -98,7 +98,6 @@ class AI(Player):
         if self.__board:
             return self.__board.getResults()[-1]
         return None
-        
 
 
 class knuthsAlgorithm:
