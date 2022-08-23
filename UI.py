@@ -59,7 +59,7 @@ class Terminal(UI):
         length: int = 4,
         numGuesses: int = 6,
         numRounds: int = 3,
-        duplicatesAllowed: bool = False,
+        duplicatesAllowed: bool = True,
     ):
         super().__init__(length, numGuesses, numRounds, duplicatesAllowed)
 

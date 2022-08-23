@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from itertools import product
+from itertools import cycle, product
 from Board import Board
 
 
@@ -55,25 +55,50 @@ class AI(Player):
 
     def __init__(self, name: str):
         super().__init__(name)
-        pass
+        self.__board = None
+        self.__algorithm = None
+    
+    def __genAlgorithm(self, length: int, coloursAllowed: dict[int, str]):
+        """
+        Generates an instance of the algorithm for the AI to use.
+        """
+        self.__algorithm = knuthsAlgorithm(length, coloursAllowed)
 
     def getMove(self, length: int, coloursAllowed: dict[int, str]) -> list:
         """
         Returns the players next guess.
         """
-        from random import randint
-        from time import sleep
-
-        sleep(1)
-        return [randint(1, list(coloursAllowed.keys())[-1]) for _ in range(length)]
-
-        # TODO: Implement Knuth's algorithm
+        if self.__algorithm == None:
+            self.__genAlgorithm(length, coloursAllowed)
+        return self.__algorithm.getNextGuess(self.__getPreviousResponse())
 
     def getCode(self, length: int, coloursAllowed: dict[int, str]) -> list:
         """
         Returns the players code.
         """
         pass
+
+    def displayBoard(self, board: Board, code: list = None):
+        """
+        Saves the board.
+        """
+        self.__board = board
+
+    def displayRoundWinner(self, winner: Player):
+        """
+        Clears the saved board and algorithm.
+        """
+        self.__board = None
+        self.__algorithm = None
+    
+    def __getPreviousResponse(self) -> list:
+        """
+        Returns the previous response from the board. If there is no board, it returns None.
+        """
+        if self.__board:
+            return self.__board.getResults()[-1]
+        return None
+        
 
 
 class knuthsAlgorithm:
@@ -106,7 +131,9 @@ class knuthsAlgorithm:
             self.__previousGuess = self.__genInitialGuess()
             return self.__previousGuess
         elif len(self.__S) == 1:
-            return list(self.__S)[0]
+            for e in self.__S:
+                break
+            return list(e)
         elif len(self.__S) == 0:
             raise ValueError("No possible guesses")
         elif previousResponse is None:
@@ -126,22 +153,24 @@ class knuthsAlgorithm:
         """
         Calculates the initial guess
         """
-        if self.__lengthOfCode == 4 and len(self.__colourOptions) == 6:
-            return [1, 1, 2, 2]  # 1122 for a MM(4,6) game
-        else:
-            raise NotImplementedError()
+        x = [i for i in self.__colourOptions for _ in range(2)]
+        y = cycle(x)
+        guess = []
+        for _ in range(self.__lengthOfCode):
+            guess.append(next(y))
+        return guess
 
     def __getGuessesThatWouldNotGiveSameResponse(
         self, guess: list[int], previousResponse: list[int]
-    ) -> set[list[int]]:
+    ) -> set[tuple[int]]:
         """
         Returns a set of all guesses that would not give the same response as the previous guess
         """
         guessesThatWouldNotGiveSameResponse = set()
         for code in self.__S:
             # turn the code tuple into a list
-            code = list(code)
-            response = self.__getResponse(guess, code)
+            lcode = list(code)
+            response = self.__getResponse(guess, lcode)
             if response != previousResponse:
                 guessesThatWouldNotGiveSameResponse.add(code)
         return guessesThatWouldNotGiveSameResponse
@@ -169,8 +198,51 @@ class knuthsAlgorithm:
     def __genNextGuess(self) -> list[int]:
         """
         Calculates the next guess using minimax.
+        Chooses the guess that has the best worst case scenario.
         """
-        raise NotImplementedError()
+        bestScore = -1
+        possibleGuesses = set()
+        for guess in self.__C:
+            score = self.__calcScore(list(guess))
+            if score[1] > bestScore:
+                bestScore = score[1]
+                possibleGuesses = {score}
+            elif score[1] == bestScore:
+                possibleGuesses.add(score)
+        guesses = []
+        for guess, _ in possibleGuesses:
+            guesses.append(guess)
+        guesses.sort()
+        for guess in guesses:
+            if guess in self.__S:
+                return list(guess)
+        return list(guesses[0])
+
+    def __calcScore(self, guess: list[int]) -> tuple[tuple[int], int]:
+        """
+        Calculates the score of a guess and returns a tuple of the guess and the score.
+        The score is defined as the best worst case scenario.
+        The minimum number of guesses that must be eliminated if making this guess.
+        """
+        minNumber = 999999999
+        for response in self.__genPossibleResponses(guess):
+            num = len(self.__S) - len(
+                self.__S.difference(
+                    self.__getGuessesThatWouldNotGiveSameResponse(guess, list(response))
+                )
+            )
+            if num < minNumber:
+                minNumber = num
+        return (tuple(guess), minNumber)
+
+    def __genPossibleResponses(self, guess: list[int]) -> set[tuple[int]]:
+        """
+        Returns a set of all possible responses to a guess.
+        """
+        possibleResponses = set()
+        for code in self.__S:
+            possibleResponses.add(tuple(self.__getResponse(guess, list(code))))
+        return possibleResponses
 
 
 class Human(Player, ABC):
