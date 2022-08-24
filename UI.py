@@ -129,7 +129,7 @@ class Terminal(UI):
                 print("You have chosen to play against a computer")
                 name = input("Please enter your name: ")
                 player1 = Player.Terminal(name)
-                player2 = Player.AI("Computer")
+                player2 = Player.Computer("Computer")
                 game = Game(
                     player1,
                     player2,
@@ -160,7 +160,7 @@ class Terminal(UI):
                 print("You have chosen to play timed mode")
                 name = input("Please enter your name: ")
                 player1 = Player.Terminal(name)
-                player2 = Player.AI("Computer")
+                player2 = Player.Computer("Computer")
                 game = Game(
                     player1,
                     player2,

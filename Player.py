@@ -48,9 +48,9 @@ class Player(ABC):
         pass
 
 
-class AI(Player):
+class Computer(Player):
     """
-    AI class that inherits from the Player class
+    Computer class that inherits from the Player class
     """
 
     def __init__(self, name: str):
