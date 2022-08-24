@@ -13,9 +13,9 @@ class Game:
         player2: Player,
         length: int = 4,
         numGuesses: int = 6,
-        numRounds: int = 1,
-        duplicatesAllowed: bool = False,
-        colours: dict[int, str] = None,
+        numRounds: int = 3,
+        duplicatesAllowed: bool = True,
+        colourNum: int = 6,
     ):
         self.__player1 = player1
         self.__player2 = player2
@@ -24,7 +24,7 @@ class Game:
         self.__numGuesses = numGuesses
         self.__numRounds = numRounds
         self.__duplicatesAllowed = duplicatesAllowed
-        self.__colours = colours
+        self.__colourNum = colourNum
         self.__player1RoundWins = 0
         self.__player2RoundWins = 0
         self.__winner = None
@@ -35,7 +35,7 @@ class Game:
         length: int,
         numGuesses: int,
         duplicatesAllowed: bool,
-        colours: dict[int, str] | None,
+        colourNum: int,
     ) -> Board:
         """
         Creates and returns a board
@@ -44,7 +44,7 @@ class Game:
             length=length,
             totalGuesses=numGuesses,
             duplicatesAllowed=duplicatesAllowed,
-            colours=colours,
+            colourNum=colourNum,
         )
 
     def getCurrentPlayer(self) -> Player:
@@ -70,7 +70,7 @@ class Game:
         Returns the current players next guess
         """
         return self.__currentPlayer.getMove(
-            self.__board.getLenOfGuess(), self.__board.getColours()
+            self.__board.getLenOfGuess(), len(self.__board.getColours())
         )
 
     def setBoardCode(self, random: bool = False):
@@ -82,13 +82,13 @@ class Game:
             if self.__currentPlayer == self.__player1:
                 self.__board.setCode(
                     self.__player2.getCode(
-                        self.__board.getLenOfGuess(), self.__board.getColours()
+                        self.__board.getLenOfGuess(), len(self.__board.getColours())
                     )
                 )
             else:
                 self.__board.setCode(
                     self.__player1.getCode(
-                        self.__board.getLenOfGuess(), self.__board.getColours()
+                        self.__board.getLenOfGuess(), len(self.__board.getColours())
                     )
                 )
         else:
@@ -105,7 +105,7 @@ class Game:
         Plays a round of the game.
         """
         self.__board = self.__createBoard(
-            self.__length, self.__numGuesses, self.__duplicatesAllowed, self.__colours
+            self.__length, self.__numGuesses, self.__duplicatesAllowed, self.__colourNum
         )
         self.setBoardCode()
         roundWinner = None

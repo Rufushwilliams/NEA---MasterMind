@@ -6,31 +6,19 @@ class Board:
     Board class
     """
 
-    __COLOURS = {
-        1: "red",
-        2: "blue",
-        3: "green",
-        4: "yellow",
-        5: "orange",
-        6: "purple",
-    }
-    __RESULTCOLOURS = {1: "black", 2: "white"}
-
     def __init__(
         self,
         length: int = 4,
         totalGuesses: int = 6,
-        duplicatesAllowed: bool = False,
-        colours: dict[int, str] | None = __COLOURS,
-        resultColours: dict[int, str] = __RESULTCOLOURS,
+        duplicatesAllowed: bool = True,
+        colourNum: int = 6,
+        resultNums: list[int] = [1, 2],
     ):
         self.__lenOfGuess = length
         self.__totalGuesses = totalGuesses
         self.__duplicatesAllowed = duplicatesAllowed
-        self.__colours = self.__COLOURS
-        if colours is not None:
-            self.__colours = colours
-        self.__resultColours = resultColours
+        self.__colourNums = [i for i in range(1, colourNum+1)]
+        self.__resultNums = resultNums
         self.__guessPointer = 0
         self.__guesses: list[list[int | None]] = [
             [None for _ in range(length)] for _ in range(totalGuesses)
@@ -41,10 +29,10 @@ class Board:
         self.__code: list[int] | None = None
 
     def getColours(self):
-        return self.__colours
+        return self.__colourNums
 
     def getResultColours(self):
-        return self.__resultColours
+        return self.__resultNums
 
     def getLenOfGuess(self):
         return self.__lenOfGuess
@@ -78,7 +66,7 @@ class Board:
             raise ValueError("Code is not set")
         elif len(guess) != self.__lenOfGuess:
             raise ValueError("Guess length is not long enough")
-        elif not all(num in list(self.__colours.keys()) for num in guess):
+        elif not all(num in self.__colourNums for num in guess):
             raise ValueError("Guess contains invalid colour")
         else:
             # calculates the result
@@ -116,7 +104,7 @@ class Board:
             results.append(self.__results[i])
         return results
 
-    def setCode(self, code: list | None = None):
+    def setCode(self, code: list[int] | None = None):
         """
         Sets the code for the board.
         If no code is given, a random code is generated
@@ -124,16 +112,16 @@ class Board:
         if code is None:
             # generate random code
             if not self.__duplicatesAllowed:
-                self.__code = sample(list(self.__colours.keys()), self.__lenOfGuess)
+                self.__code = sample(self.__colourNums, self.__lenOfGuess)
             else:
                 self.__code = [
-                    choice(list(self.__colours.keys()))
+                    choice(self.__colourNums)
                     for _ in range(self.__lenOfGuess)
                 ]
         else:
             if len(code) != self.__lenOfGuess:
                 raise ValueError("Code length is not correct")
-            elif not all(colour in self.__colours for colour in code):
+            elif not all(colour in self.__colourNums for colour in code):
                 raise ValueError("Code contains invalid colour")
             elif not self.__duplicatesAllowed and len(set(code)) != self.__lenOfGuess:
                 raise ValueError("Code contains duplicates")

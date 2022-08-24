@@ -8,9 +8,9 @@ class Algorithm(ABC):
     Abstract class for algorithms
     """
 
-    def __init__(self, lengthOfCode: int, colours: dict[int, str]):
+    def __init__(self, lengthOfCode: int, colourNum: int):
         self._lengthOfCode = lengthOfCode
-        self._colourOptions = list(colours.keys())
+        self._colourOptions = [i for i in range(1, colourNum+1)]
 
     @abstractmethod
     def getNextGuess(self, previousResponse: list[int] = None) -> list:
@@ -26,8 +26,8 @@ class Random(Algorithm):
     Random algorithm
     """
 
-    def __init__(self, lengthOfCode: int, colours: dict[int, str]):
-        super().__init__(lengthOfCode, colours)
+    def __init__(self, lengthOfCode: int, colourNum: int):
+        super().__init__(lengthOfCode, colourNum)
 
     def getNextGuess(self, previousResponse: list[int] = None) -> list:
         """
@@ -41,8 +41,8 @@ class RandomConsistent(Algorithm):
     Random algorithm that is consistent with the feedback it is given
     """
 
-    def __init__(self, lengthOfCode: int, colours: dict[int, str]):
-        super().__init__(lengthOfCode, colours)
+    def __init__(self, lengthOfCode: int, colourNum: int):
+        super().__init__(lengthOfCode, colourNum)
         self._previousGuess = None
         # create a set S of all possible guesses
         self._S = set(product(self._colourOptions, repeat=lengthOfCode))
@@ -140,8 +140,8 @@ class Knuths(RandomConsistent):
         7. repeat from step 3
     """
 
-    def __init__(self, lengthOfCode: int, colours: dict[int, str]):
-        super().__init__(lengthOfCode, colours)
+    def __init__(self, lengthOfCode: int, colourNum: int):
+        super().__init__(lengthOfCode, colourNum)
         # set S from the superclass
         # create a set C of all possible codes
         self.__C = frozenset(self._S)

@@ -16,14 +16,14 @@ class Player(ABC):
         return self._name
 
     @abstractmethod
-    def getMove(self, length: int, coloursAllowed: dict[int, str]) -> list:
+    def getMove(self, length: int, colourNum: int) -> list[int]:
         """
         Returns the players next guess.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def getCode(self, length: int, coloursAllowed: dict[int, str]) -> list:
+    def getCode(self, length: int, colourNum: int) -> list[int]:
         """
         Returns the players code.
         """
@@ -59,21 +59,21 @@ class Computer(Player):
         self.__algorithmType = algorithmType
         self.__algorithm = None
 
-    def __genAlgorithm(self, length: int, coloursAllowed: dict[int, str]):
+    def __genAlgorithm(self, length: int, colourNum: int):
         """
         Generates an instance of the algorithm for the AI to use.
         """
-        self.__algorithm = self.__algorithmType(length, coloursAllowed)
+        self.__algorithm = self.__algorithmType(length, colourNum)
 
-    def getMove(self, length: int, coloursAllowed: dict[int, str]) -> list:
+    def getMove(self, length: int, colourNum: int) -> list[int]:
         """
         Returns the players next guess.
         """
         if self.__algorithm == None:
-            self.__genAlgorithm(length, coloursAllowed)
+            self.__genAlgorithm(length, colourNum)
         return self.__algorithm.getNextGuess(self.__getPreviousResponse())
 
-    def getCode(self, length: int, coloursAllowed: dict[int, str]) -> list:
+    def getCode(self, length: int, colourNum: int) -> list[int]:
         """
         Returns the players code.
         """
@@ -153,35 +153,35 @@ class Terminal(LocalHuman):
         super().__init__(name)
         pass
 
-    def getMove(self, length: int, coloursAllowed: dict[int, str]) -> list:
+    def getMove(self, length: int, colourNum: int) -> list[int]:
         """
         Returns the players next guess.
         """
-        colours = list(coloursAllowed.keys())
+        colourOptions = [i for i in range(1, colourNum+1)]
         print(f"{self._name}, please enter your guess of {length} digits long")
         while True:
             guess = input()
             if (
                 guess.isdigit()
                 and len(guess) == length
-                and all(int(i) in colours for i in guess)
+                and all(int(i) in colourOptions for i in guess)
             ):
                 break
             print("Please enter a valid guess")
         return [int(i) for i in guess]
 
-    def getCode(self, length: int, coloursAllowed: dict[int, str]) -> list:
+    def getCode(self, length: int, colourNum: int) -> list[int]:
         """
         Returns the players code.
         """
-        colours = list(coloursAllowed.keys())
+        colourOptions = [i for i in range(1, colourNum+1)]
         print(f"{self._name}, please enter your code of {length} digits long")
         while True:
             code = input()
             if (
                 code.isdigit()
                 and len(code) == length
-                and all(int(i) in colours for i in code)
+                and all(int(i) in colourOptions for i in code)
             ):
                 break
             print("Please enter a valid code")
@@ -222,13 +222,13 @@ class GUI(LocalHuman):
         super().__init__(name)
         pass
 
-    def getMove(self, length: int, coloursAllowed: dict[int, str]) -> list:
+    def getMove(self, length: int, colourNum: int) -> list[int]:
         """
         Returns the players next guess.
         """
         raise NotImplementedError()
 
-    def getCode(self, length: int, coloursAllowed: dict[int, str]) -> list:
+    def getCode(self, length: int, colourNum: int) -> list[int]:
         """
         Returns the players code.
         """

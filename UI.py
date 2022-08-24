@@ -1,3 +1,4 @@
+from typing import Type
 from abc import ABC, abstractmethod
 from time import time
 from Game import Game
@@ -22,7 +23,7 @@ class UI(ABC):
         numGuesses: int = 6,
         numRounds: int = 3,
         duplicatesAllowed: bool = True,
-        computerAlgorithmType: alg.Algorithm = alg.Knuths
+        computerAlgorithmType: Type[alg.Algorithm] = alg.Knuths
     ):
         self._length = length
         self._numGuesses = numGuesses
@@ -49,7 +50,7 @@ class GUI(UI):
         numGuesses: int = 6,
         numRounds: int = 3,
         duplicatesAllowed: bool = True,
-        computerAlgorithmType: alg.Algorithm = alg.Knuths
+        computerAlgorithmType: Type[alg.Algorithm] = alg.Knuths
     ):
         super().__init__(length, numGuesses, numRounds, duplicatesAllowed, computerAlgorithmType)
 
@@ -71,7 +72,7 @@ class Terminal(UI):
         numGuesses: int = 6,
         numRounds: int = 3,
         duplicatesAllowed: bool = True,
-        computerAlgorithmType: alg.Algorithm = alg.Knuths
+        computerAlgorithmType: Type[alg.Algorithm] = alg.Knuths
     ):
         super().__init__(length, numGuesses, numRounds, duplicatesAllowed, computerAlgorithmType)
 
@@ -120,9 +121,8 @@ class Terminal(UI):
         self._numRounds = int(rounds)
         print("-------------------------------------------------------")
         print("What algorithm do you want the computer to use? (default Knuths)")
-        print("Enter 1 for Random")
-        print("Enter 2 for RandomConsistent")
-        print("Enter 3 for Knuths")
+        for key, value in self.ALGORITHMTYPES.items():
+            print(f"Enter {key} for {value.__name__}")
         while True:
             algorithm = input()
             if algorithm.isdigit() and int(algorithm) in self.ALGORITHMTYPES.keys():
