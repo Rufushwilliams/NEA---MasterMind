@@ -17,7 +17,7 @@ class Board:
         self.__lenOfGuess = length
         self.__totalGuesses = totalGuesses
         self.__duplicatesAllowed = duplicatesAllowed
-        self.__colourNums = [i for i in range(1, colourNum+1)]
+        self.__colourNums = [i for i in range(1, colourNum + 1)]
         self.__resultNums = resultNums
         self.__guessPointer = 0
         self.__guesses: list[list[int | None]] = [
@@ -42,6 +42,9 @@ class Board:
 
     def getRemainingGuesses(self):
         return self.__totalGuesses - self.__guessPointer
+
+    def getDuplicatesAllowed(self):
+        return self.__duplicatesAllowed
 
     def makeGuess(self, guess: list) -> tuple[list, int, bool]:
         """
@@ -115,8 +118,7 @@ class Board:
                 self.__code = sample(self.__colourNums, self.__lenOfGuess)
             else:
                 self.__code = [
-                    choice(self.__colourNums)
-                    for _ in range(self.__lenOfGuess)
+                    choice(self.__colourNums) for _ in range(self.__lenOfGuess)
                 ]
         else:
             if len(code) != self.__lenOfGuess:

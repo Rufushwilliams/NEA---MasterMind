@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from random import choice, sample
 from Board import Board
 import Algorithms as alg
 
@@ -16,14 +17,18 @@ class Player(ABC):
         return self._name
 
     @abstractmethod
-    def getMove(self, length: int, colourNum: int) -> list[int]:
+    def getMove(
+        self, length: int, colourNum: int, duplicatesAllowed: bool
+    ) -> list[int]:
         """
         Returns the players next guess.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def getCode(self, length: int, colourNum: int) -> list[int]:
+    def getCode(
+        self, length: int, colourNum: int, duplicatesAllowed: bool
+    ) -> list[int]:
         """
         Returns the players code.
         """
@@ -59,21 +64,25 @@ class Computer(Player):
         self.__algorithmType = algorithmType
         self.__algorithm = None
 
-    def __genAlgorithm(self, length: int, colourNum: int):
+    def __genAlgorithm(self, length: int, colourNum: int, duplicatesAllowed: bool):
         """
         Generates an instance of the algorithm for the AI to use.
         """
-        self.__algorithm = self.__algorithmType(length, colourNum)
+        self.__algorithm = self.__algorithmType(length, colourNum, duplicatesAllowed)
 
-    def getMove(self, length: int, colourNum: int) -> list[int]:
+    def getMove(
+        self, length: int, colourNum: int, duplicatesAllowed: bool
+    ) -> list[int]:
         """
         Returns the players next guess.
         """
         if self.__algorithm == None:
-            self.__genAlgorithm(length, colourNum)
+            self.__genAlgorithm(length, colourNum, duplicatesAllowed)
         return self.__algorithm.getNextGuess(self.__getPreviousResponse())
 
-    def getCode(self, length: int, colourNum: int) -> list[int]:
+    def getCode(
+        self, length: int, colourNum: int, duplicatesAllowed: bool
+    ) -> list[int]:
         """
         Returns the players code.
         """
@@ -153,39 +162,71 @@ class Terminal(LocalHuman):
         super().__init__(name)
         pass
 
-    def getMove(self, length: int, colourNum: int) -> list[int]:
+    def getMove(
+        self, length: int, colourNum: int, duplicatesAllowed: bool
+    ) -> list[int]:
         """
         Returns the players next guess.
         """
-        colourOptions = [i for i in range(1, colourNum+1)]
-        print(f"{self._name}, please enter your guess of {length} digits long")
-        while True:
-            guess = input()
-            if (
-                guess.isdigit()
-                and len(guess) == length
-                and all(int(i) in colourOptions for i in guess)
-            ):
-                break
-            print("Please enter a valid guess")
-        return [int(i) for i in guess]
+        return self.__getPlayerInput(length, colourNum, duplicatesAllowed, "guess")
 
-    def getCode(self, length: int, colourNum: int) -> list[int]:
+    def getCode(
+        self, length: int, colourNum: int, duplicatesAllowed: bool
+    ) -> list[int]:
         """
         Returns the players code.
         """
-        colourOptions = [i for i in range(1, colourNum+1)]
-        print(f"{self._name}, please enter your code of {length} digits long")
-        while True:
-            code = input()
-            if (
-                code.isdigit()
-                and len(code) == length
-                and all(int(i) in colourOptions for i in code)
-            ):
-                break
-            print("Please enter a valid code")
-        return [int(i) for i in code]
+        return self.__getPlayerInput(length, colourNum, duplicatesAllowed, "code")
+
+    def __getPlayerInput(
+        self, length: int, colourNum: int, duplicatesAllowed: bool, message: str
+    ) -> list[int]:
+        """
+        Returns the players input for either a guess or code.
+        """
+        colourOptions = [i for i in range(1, colourNum + 1)]
+        if duplicatesAllowed:
+            example = [choice(colourOptions) for _ in range(length)]
+            x = ", each as many times as you want"
+        else:
+            example = sample(colourOptions, length)
+            x = ", each only once"
+        if colourNum >= 10:
+            example = " ".join(str(i) for i in example)
+            print(f"{self._name}, please enter your {message} of {length} numbers long")
+            print(
+                f"You may include the numbers 1 through {colourNum}{x}, seperated by spaces"
+            )
+            print(f"E.g. '{example}'")
+            while True:
+                guess = input()
+                guess = guess.split(" ")
+                if (
+                    all(i.isdigit() for i in guess)
+                    and len(guess) == length
+                    and all(int(i) in colourOptions for i in guess)
+                    and (duplicatesAllowed or len(set(guess)) == length)
+                ):
+                    break
+                print(f"Please enter a valid {message}")
+        else:
+            example = "".join(str(i) for i in example)
+            print(f"{self._name}, please enter your {message} of {length} numbers long")
+            print(
+                f"You may include the numbers 1 through {colourNum}{x}, with no seperation"
+            )
+            print(f"E.g. '{example}'")
+            while True:
+                guess = input()
+                if (
+                    guess.isdigit()
+                    and len(guess) == length
+                    and all(int(i) in colourOptions for i in guess)
+                    and (duplicatesAllowed or len(set(guess)) == length)
+                ):
+                    break
+                print(f"Please enter a valid {message}")
+        return [int(i) for i in guess]
 
     def displayBoard(self, board: Board, code: list = None):
         """
@@ -222,13 +263,17 @@ class GUI(LocalHuman):
         super().__init__(name)
         pass
 
-    def getMove(self, length: int, colourNum: int) -> list[int]:
+    def getMove(
+        self, length: int, colourNum: int, duplicatesAllowed: bool
+    ) -> list[int]:
         """
         Returns the players next guess.
         """
         raise NotImplementedError()
 
-    def getCode(self, length: int, colourNum: int) -> list[int]:
+    def getCode(
+        self, length: int, colourNum: int, duplicatesAllowed: bool
+    ) -> list[int]:
         """
         Returns the players code.
         """

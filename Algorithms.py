@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from itertools import cycle, product
-from random import choice
+from itertools import cycle, permutations, product
+from random import choice, sample
 
 
 class Algorithm(ABC):
@@ -8,9 +8,10 @@ class Algorithm(ABC):
     Abstract class for algorithms
     """
 
-    def __init__(self, lengthOfCode: int, colourNum: int):
+    def __init__(self, lengthOfCode: int, colourNum: int, duplicatesAllowed: bool):
         self._lengthOfCode = lengthOfCode
-        self._colourOptions = [i for i in range(1, colourNum+1)]
+        self._colourOptions = [i for i in range(1, colourNum + 1)]
+        self._duplicatesAllowed = duplicatesAllowed
 
     @abstractmethod
     def getNextGuess(self, previousResponse: list[int] = None) -> list:
@@ -20,20 +21,21 @@ class Algorithm(ABC):
         raise NotImplementedError()
 
 
-
 class Random(Algorithm):
     """
     Random algorithm
     """
 
-    def __init__(self, lengthOfCode: int, colourNum: int):
-        super().__init__(lengthOfCode, colourNum)
+    def __init__(self, lengthOfCode: int, colourNum: int, duplicatesAllowed: bool):
+        super().__init__(lengthOfCode, colourNum, duplicatesAllowed)
 
     def getNextGuess(self, previousResponse: list[int] = None) -> list:
         """
         Gets the next guess according to the algorithm
         """
-        return [choice(self._colourOptions) for _ in range(self._lengthOfCode)]
+        if self._duplicatesAllowed:
+            return [choice(self._colourOptions) for _ in range(self._lengthOfCode)]
+        return sample(self._colourOptions, self._lengthOfCode)
 
 
 class RandomConsistent(Algorithm):
@@ -41,11 +43,14 @@ class RandomConsistent(Algorithm):
     Random algorithm that is consistent with the feedback it is given
     """
 
-    def __init__(self, lengthOfCode: int, colourNum: int):
-        super().__init__(lengthOfCode, colourNum)
+    def __init__(self, lengthOfCode: int, colourNum: int, duplicatesAllowed: bool):
+        super().__init__(lengthOfCode, colourNum, duplicatesAllowed)
         self._previousGuess = None
         # create a set S of all possible guesses
-        self._S = set(product(self._colourOptions, repeat=lengthOfCode))
+        if self._duplicatesAllowed:
+            self._S = set(product(self._colourOptions, repeat=lengthOfCode))
+        else:
+            self._S = set(permutations(self._colourOptions, r=lengthOfCode))
 
     def getNextGuess(self, previousResponse: list[int] = None) -> list[int]:
         """
@@ -72,24 +77,27 @@ class RandomConsistent(Algorithm):
             # call _genNextGuess to get the next guess
             self._previousGuess = self._genNextGuess()
             return self._previousGuess
-    
+
     def _genInitialGuess(self) -> list[int]:
         """
         Calculates the initial guess
         """
-        x = [i for i in self._colourOptions for _ in range(2)]
+        if self._duplicatesAllowed:
+            x = [i for i in self._colourOptions for _ in range(2)]
+        else:
+            x = self._colourOptions.copy()
         y = cycle(x)
         guess = []
         for _ in range(self._lengthOfCode):
             guess.append(next(y))
         return guess
-    
+
     def _genNextGuess(self) -> list[int]:
         """
         Returns a random guess from the remaining guesses
         """
         return list(choice(list(self._S)))
-    
+
     def _getGuessesThatWouldNotGiveSameResponse(
         self, guess: list[int], previousResponse: list[int]
     ) -> set[tuple[int]]:
@@ -104,7 +112,7 @@ class RandomConsistent(Algorithm):
             if response != previousResponse:
                 guessesThatWouldNotGiveSameResponse.add(code)
         return guessesThatWouldNotGiveSameResponse
-    
+
     def _getResponse(self, guess: list[int], code: list[int]) -> list:
         """
         Returns a list of the result of the guess against the code
@@ -140,8 +148,8 @@ class Knuths(RandomConsistent):
         7. repeat from step 3
     """
 
-    def __init__(self, lengthOfCode: int, colourNum: int):
-        super().__init__(lengthOfCode, colourNum)
+    def __init__(self, lengthOfCode: int, colourNum: int, duplicatesAllowed: bool):
+        super().__init__(lengthOfCode, colourNum, duplicatesAllowed)
         # set S from the superclass
         # create a set C of all possible codes
         self.__C = frozenset(self._S)

@@ -2,8 +2,8 @@ from typing import Type
 from abc import ABC, abstractmethod
 from time import time
 from Game import Game
-import Player
 import Algorithms as alg
+import Player
 
 
 class UI(ABC):
@@ -23,12 +23,14 @@ class UI(ABC):
         numGuesses: int = 6,
         numRounds: int = 3,
         duplicatesAllowed: bool = True,
-        computerAlgorithmType: Type[alg.Algorithm] = alg.Knuths
+        colourNum: int = 6,
+        computerAlgorithmType: Type[alg.Algorithm] = alg.Knuths,
     ):
         self._length = length
         self._numGuesses = numGuesses
         self._numRounds = numRounds
         self._duplicatesAllowed = duplicatesAllowed
+        self._colourNum = colourNum
         self._computerAlgorithmType = computerAlgorithmType
 
     @abstractmethod
@@ -50,9 +52,17 @@ class GUI(UI):
         numGuesses: int = 6,
         numRounds: int = 3,
         duplicatesAllowed: bool = True,
-        computerAlgorithmType: Type[alg.Algorithm] = alg.Knuths
+        colourNum: int = 6,
+        computerAlgorithmType: Type[alg.Algorithm] = alg.Knuths,
     ):
-        super().__init__(length, numGuesses, numRounds, duplicatesAllowed, computerAlgorithmType)
+        super().__init__(
+            length,
+            numGuesses,
+            numRounds,
+            duplicatesAllowed,
+            colourNum,
+            computerAlgorithmType,
+        )
 
     def run(self):
         """
@@ -72,9 +82,17 @@ class Terminal(UI):
         numGuesses: int = 6,
         numRounds: int = 3,
         duplicatesAllowed: bool = True,
-        computerAlgorithmType: Type[alg.Algorithm] = alg.Knuths
+        colourNum: int = 6,
+        computerAlgorithmType: Type[alg.Algorithm] = alg.Knuths,
     ):
-        super().__init__(length, numGuesses, numRounds, duplicatesAllowed, computerAlgorithmType)
+        super().__init__(
+            length,
+            numGuesses,
+            numRounds,
+            duplicatesAllowed,
+            colourNum,
+            computerAlgorithmType,
+        )
 
     def setup(self):
         """
@@ -87,7 +105,7 @@ class Terminal(UI):
         print("How long do you want the code to be? (default 4)")
         while True:
             codeLength = input()
-            if codeLength.isdigit():
+            if codeLength.isdigit() and int(codeLength) > 0:
                 break
             print("Please enter a valid number")
         self._length = int(codeLength)
@@ -95,7 +113,7 @@ class Terminal(UI):
         print("How many guesses do you want to have? (default 6)")
         while True:
             guesses = input()
-            if guesses.isdigit():
+            if guesses.isdigit() and int(guesses) > 0:
                 break
             print("Please enter a valid number")
         self._numGuesses = int(guesses)
@@ -111,6 +129,18 @@ class Terminal(UI):
                 break
             print("Please enter y or n")
         self._duplicatesAllowed = duplicates
+        print("-------------------------------------------------------")
+        print("How many unique pegs do you want? (default 6)")
+        while True:
+            colourNum = input()
+            if (
+                colourNum.isdigit()
+                and int(colourNum) > 0
+                and (self._duplicatesAllowed or int(colourNum) >= self._length)
+            ):
+                break
+            print("Please enter a valid number")
+        self._colourNum = int(colourNum)
         print("-------------------------------------------------------")
         print("How many rounds do you want to play? (default 3)")
         while True:
@@ -159,6 +189,7 @@ class Terminal(UI):
                     self._numGuesses,
                     self._numRounds,
                     self._duplicatesAllowed,
+                    self._colourNum,
                 )
                 game.run()
                 continue
@@ -175,6 +206,7 @@ class Terminal(UI):
                     self._numGuesses,
                     self._numRounds,
                     self._duplicatesAllowed,
+                    self._colourNum,
                 )
                 game.run()
                 continue
@@ -183,14 +215,7 @@ class Terminal(UI):
                 name = input("Please enter your name: ")
                 player1 = Player.Terminal(name)
                 player2 = Player.Computer("Computer", self._computerAlgorithmType)
-                game = Game(
-                    player1,
-                    player2,
-                    self._length,
-                    self._numGuesses,
-                    1,
-                    self._duplicatesAllowed,
-                )
+                game = Game(player1, player2, 4, 6, 1, self._duplicatesAllowed, 6)
                 startTime = time()
                 game.run()
                 endTime = time()
