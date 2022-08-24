@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from time import time
 from Game import Game
 import Player
+import Algorithms as alg
 
 
 class UI(ABC):
@@ -9,17 +10,25 @@ class UI(ABC):
     Basic UI class used to display the game setup to the user
     """
 
+    ALGORITHMTYPES = {
+        1: alg.Random,
+        2: alg.RandomConsistent,
+        3: alg.Knuths,
+    }
+
     def __init__(
         self,
         length: int = 4,
         numGuesses: int = 6,
-        numRounds: int = 1,
+        numRounds: int = 3,
         duplicatesAllowed: bool = True,
+        computerAlgorithmType: alg.Algorithm = alg.Knuths
     ):
         self._length = length
         self._numGuesses = numGuesses
         self._numRounds = numRounds
         self._duplicatesAllowed = duplicatesAllowed
+        self._computerAlgorithmType = computerAlgorithmType
 
     @abstractmethod
     def run(self):
@@ -38,10 +47,11 @@ class GUI(UI):
         self,
         length: int = 4,
         numGuesses: int = 6,
-        numRounds: int = 1,
-        duplicatesAllowed: bool = False,
+        numRounds: int = 3,
+        duplicatesAllowed: bool = True,
+        computerAlgorithmType: alg.Algorithm = alg.Knuths
     ):
-        super().__init__(length, numGuesses, numRounds, duplicatesAllowed)
+        super().__init__(length, numGuesses, numRounds, duplicatesAllowed, computerAlgorithmType)
 
     def run(self):
         """
@@ -61,8 +71,9 @@ class Terminal(UI):
         numGuesses: int = 6,
         numRounds: int = 3,
         duplicatesAllowed: bool = True,
+        computerAlgorithmType: alg.Algorithm = alg.Knuths
     ):
-        super().__init__(length, numGuesses, numRounds, duplicatesAllowed)
+        super().__init__(length, numGuesses, numRounds, duplicatesAllowed, computerAlgorithmType)
 
     def setup(self):
         """
@@ -108,6 +119,17 @@ class Terminal(UI):
             print("Please enter a valid number")
         self._numRounds = int(rounds)
         print("-------------------------------------------------------")
+        print("What algorithm do you want the computer to use? (default Knuths)")
+        print("Enter 1 for Random")
+        print("Enter 2 for RandomConsistent")
+        print("Enter 3 for Knuths")
+        while True:
+            algorithm = input()
+            if algorithm.isdigit() and int(algorithm) in self.ALGORITHMTYPES.keys():
+                break
+            print("Please enter a valid number")
+        self._computerAlgorithmType = self.ALGORITHMTYPES[int(algorithm)]
+        print("-------------------------------------------------------")
         print("Game setup complete")
         print("-------------------------------------------------------")
 
@@ -129,7 +151,7 @@ class Terminal(UI):
                 print("You have chosen to play against a computer")
                 name = input("Please enter your name: ")
                 player1 = Player.Terminal(name)
-                player2 = Player.Computer("Computer")
+                player2 = Player.Computer("Computer", self._computerAlgorithmType)
                 game = Game(
                     player1,
                     player2,
@@ -160,7 +182,7 @@ class Terminal(UI):
                 print("You have chosen to play timed mode")
                 name = input("Please enter your name: ")
                 player1 = Player.Terminal(name)
-                player2 = Player.Computer("Computer")
+                player2 = Player.Computer("Computer", self._computerAlgorithmType)
                 game = Game(
                     player1,
                     player2,

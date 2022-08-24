@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from itertools import cycle, product
+from random import choice
 
 
 class Algorithm(ABC):
@@ -19,54 +20,60 @@ class Algorithm(ABC):
         raise NotImplementedError()
 
 
-class Knuths(Algorithm):
+
+class Random(Algorithm):
     """
-    A class that implements the knuths algorithm for generating guesses.
-    Knuths algorithm for generating guesses:
-        1. create a set C of all possible codes
-        2. create a set S of all possible guesses
-        3. play the next guess
-        4. if the guess is correct, terminate
-        5. otherwise remove from S all guesses that would not give the same response if the current guess was the code
-        6. calculate the next guess using minimax -> choose the guess that has the least worse response score
-        7. repeat from step 3
+    Random algorithm
     """
 
     def __init__(self, lengthOfCode: int, colours: dict[int, str]):
         super().__init__(lengthOfCode, colours)
-        self.__previousGuess = None
+
+    def getNextGuess(self, previousResponse: list[int] = None) -> list:
+        """
+        Gets the next guess according to the algorithm
+        """
+        return [choice(self._colourOptions) for _ in range(self._lengthOfCode)]
+
+
+class RandomConsistent(Algorithm):
+    """
+    Random algorithm that is consistent with the feedback it is given
+    """
+
+    def __init__(self, lengthOfCode: int, colours: dict[int, str]):
+        super().__init__(lengthOfCode, colours)
+        self._previousGuess = None
         # create a set S of all possible guesses
-        self.__S = set(product(self._colourOptions, repeat=lengthOfCode))
-        # create a set C of all possible codes
-        self.__C = frozenset(self.__S)
+        self._S = set(product(self._colourOptions, repeat=lengthOfCode))
 
     def getNextGuess(self, previousResponse: list[int] = None) -> list[int]:
         """
-        Gets the next guess using the knuths algorithm.
+        Gets the next guess according to the algorithm.
         """
-        if self.__previousGuess is None:
-            self.__previousGuess = self.__genInitialGuess()
-            return self.__previousGuess
-        elif len(self.__S) == 1:
-            for e in self.__S:
+        if self._previousGuess is None:
+            self._previousGuess = self._genInitialGuess()
+            return self._previousGuess
+        elif len(self._S) == 1:
+            for e in self._S:
                 break
             return list(e)
-        elif len(self.__S) == 0:
+        elif len(self._S) == 0:
             raise ValueError("No possible guesses")
         elif previousResponse is None:
             raise ValueError("previousResponse cannot be None")
         else:
             # remove from S all guesses that would not give the same response if the current guess was the code
-            self.__S.difference_update(
-                self.__getGuessesThatWouldNotGiveSameResponse(
-                    self.__previousGuess, previousResponse
+            self._S.difference_update(
+                self._getGuessesThatWouldNotGiveSameResponse(
+                    self._previousGuess, previousResponse
                 )
             )
-            # calculate the next guess using minimax -> choose the guess that has the least worse response score
-            self.__previousGuess = self.__genNextGuess()
-            return self.__previousGuess
-
-    def __genInitialGuess(self) -> list[int]:
+            # call _genNextGuess to get the next guess
+            self._previousGuess = self._genNextGuess()
+            return self._previousGuess
+    
+    def _genInitialGuess(self) -> list[int]:
         """
         Calculates the initial guess
         """
@@ -76,23 +83,29 @@ class Knuths(Algorithm):
         for _ in range(self._lengthOfCode):
             guess.append(next(y))
         return guess
-
-    def __getGuessesThatWouldNotGiveSameResponse(
+    
+    def _genNextGuess(self) -> list[int]:
+        """
+        Returns a random guess from the remaining guesses
+        """
+        return list(choice(list(self._S)))
+    
+    def _getGuessesThatWouldNotGiveSameResponse(
         self, guess: list[int], previousResponse: list[int]
     ) -> set[tuple[int]]:
         """
         Returns a set of all guesses that would not give the same response as the previous guess
         """
         guessesThatWouldNotGiveSameResponse = set()
-        for code in self.__S:
+        for code in self._S:
             # turn the code tuple into a list
             lcode = list(code)
-            response = self.__getResponse(guess, lcode)
+            response = self._getResponse(guess, lcode)
             if response != previousResponse:
                 guessesThatWouldNotGiveSameResponse.add(code)
         return guessesThatWouldNotGiveSameResponse
-
-    def __getResponse(self, guess: list[int], code: list[int]) -> list:
+    
+    def _getResponse(self, guess: list[int], code: list[int]) -> list:
         """
         Returns a list of the result of the guess against the code
         """
@@ -112,7 +125,28 @@ class Knuths(Algorithm):
                 tempCode.pop(tempCode.index(tempGuess[i]))
         return result
 
-    def __genNextGuess(self) -> list[int]:
+
+class Knuths(RandomConsistent):
+    """
+    A class that implements the knuths algorithm for generating guesses.
+    Inherits from RandomConsistent, as it uses the same algorithm for steps 2-5.
+    Knuths algorithm for generating guesses:
+        1. create a set C of all possible codes
+        2. create a set S of all possible guesses
+        3. play the next guess
+        4. if the guess is correct, terminate
+        5. otherwise remove from S all guesses that would not give the same response if the current guess was the code
+        6. calculate the next guess using minimax -> choose the guess that has the least worse response score
+        7. repeat from step 3
+    """
+
+    def __init__(self, lengthOfCode: int, colours: dict[int, str]):
+        super().__init__(lengthOfCode, colours)
+        # set S from the superclass
+        # create a set C of all possible codes
+        self.__C = frozenset(self._S)
+
+    def _genNextGuess(self) -> list[int]:
         """
         Calculates the next guess using minimax.
         Chooses the guess that has the best worst case scenario.
@@ -131,7 +165,7 @@ class Knuths(Algorithm):
             guesses.append(guess)
         guesses.sort()
         for guess in guesses:
-            if guess in self.__S:
+            if guess in self._S:
                 return list(guess)
         return list(guesses[0])
 
@@ -143,9 +177,9 @@ class Knuths(Algorithm):
         """
         minNumber = 999999999
         for response in self.__genPossibleResponses(guess):
-            num = len(self.__S) - len(
-                self.__S.difference(
-                    self.__getGuessesThatWouldNotGiveSameResponse(guess, list(response))
+            num = len(self._S) - len(
+                self._S.difference(
+                    self._getGuessesThatWouldNotGiveSameResponse(guess, list(response))
                 )
             )
             if num < minNumber:
@@ -157,6 +191,6 @@ class Knuths(Algorithm):
         Returns a set of all possible responses to a guess.
         """
         possibleResponses = set()
-        for code in self.__S:
-            possibleResponses.add(tuple(self.__getResponse(guess, list(code))))
+        for code in self._S:
+            possibleResponses.add(tuple(self._getResponse(guess, list(code))))
         return possibleResponses

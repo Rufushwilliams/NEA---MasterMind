@@ -53,16 +53,17 @@ class Computer(Player):
     Computer class that inherits from the Player class
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, algorithmType: alg.Algorithm):
         super().__init__(name)
         self.__board = None
-        self.__algorithm: alg.Algorithm = None
+        self.__algorithmType = algorithmType
+        self.__algorithm = None
 
     def __genAlgorithm(self, length: int, coloursAllowed: dict[int, str]):
         """
         Generates an instance of the algorithm for the AI to use.
         """
-        self.__algorithm = alg.Knuths(length, coloursAllowed)
+        self.__algorithm = self.__algorithmType(length, coloursAllowed)
 
     def getMove(self, length: int, coloursAllowed: dict[int, str]) -> list:
         """
