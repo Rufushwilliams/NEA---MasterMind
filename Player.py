@@ -1,5 +1,8 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from threading import Thread
+import tkinter as tk
+import tkinter.messagebox as tkmb
 from random import choice, sample
 from Board import Board
 import Algorithms as alg
@@ -10,11 +13,11 @@ class Player(ABC):
     Basic player class
     """
 
-    def __init__(self, name: str):
-        self._name = name.capitalize()
+    def __init__(self, playerName: str):
+        self._playerName = playerName.capitalize()
 
-    def getName(self) -> str:
-        return self._name
+    def getPlayerName(self) -> str:
+        return self._playerName
 
     @abstractmethod
     def getMove(
@@ -34,23 +37,26 @@ class Player(ABC):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def displayBoard(self, board: Board, code: list = None):
         """
         Displays the board to the player.
         """
-        pass
+        raise NotImplementedError()
 
+    @abstractmethod
     def displayRoundWinner(self, winner: Player):
         """
         Displays the winner of the round.
         """
-        pass
+        raise NotImplementedError()
 
+    @abstractmethod
     def displayWinner(self, winner: Player | None):
         """
         Displays the winner of the game.
         """
-        pass
+        raise NotImplementedError()
 
 
 class Computer(Player):
@@ -58,8 +64,8 @@ class Computer(Player):
     Computer class that inherits from the Player class
     """
 
-    def __init__(self, name: str, algorithmType: alg.Algorithm):
-        super().__init__(name)
+    def __init__(self, playerName: str, algorithmType: alg.Algorithm):
+        super().__init__(playerName)
         self.__board = None
         self.__algorithmType = algorithmType
         self.__algorithm = None
@@ -86,7 +92,10 @@ class Computer(Player):
         """
         Returns the players code.
         """
-        pass
+        colourOptions = [i for i in range(1, colourNum + 1)]
+        if not duplicatesAllowed:
+            return sample(colourOptions, length)
+        return [choice(colourOptions) for _ in range(length)]
 
     def displayBoard(self, board: Board, code: list = None):
         """
@@ -100,6 +109,12 @@ class Computer(Player):
         """
         self.__board = None
         self.__algorithm = None
+
+    def displayWinner(self, winner: Player | None):
+        """
+        The computer does not need to do anything when the game is over.
+        """
+        pass
 
     def __getPreviousResponse(self) -> list:
         """
@@ -115,41 +130,19 @@ class Human(Player, ABC):
     Human class that inherits from the Player class
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, playerName: str):
+        super().__init__(playerName)
         pass
 
 
 class LocalHuman(Human, ABC):
     """
     Local human class that inherits from the Human class
-    UI is only needed for the local human class
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, playerName: str):
+        super().__init__(playerName)
         pass
-
-    @abstractmethod
-    def displayBoard(self, board: Board, code: list = None):
-        """
-        Displays the board to the ui
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def displayRoundWinner(self, winner: Player):
-        """
-        Displays the winner of the round to the ui.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def displayWinner(self, winner: Player | None):
-        """
-        Displays the winner to the ui
-        """
-        raise NotImplementedError()
 
 
 class Terminal(LocalHuman):
@@ -158,8 +151,8 @@ class Terminal(LocalHuman):
     This class is used as the LocalHuman class when displaying the game to the terminal
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, playerName: str):
+        super().__init__(playerName)
         pass
 
     def getMove(
@@ -193,7 +186,7 @@ class Terminal(LocalHuman):
             x = ", each only once"
         if colourNum >= 10:
             example = " ".join(str(i) for i in example)
-            print(f"{self._name}, please enter your {message} of {length} numbers long")
+            print(f"{self._playerName}, please enter your {message} of {length} numbers long")
             print(
                 f"You may include the numbers 1 through {colourNum}{x}, seperated by spaces"
             )
@@ -211,7 +204,7 @@ class Terminal(LocalHuman):
                 print(f"Please enter a valid {message}")
         else:
             example = "".join(str(i) for i in example)
-            print(f"{self._name}, please enter your {message} of {length} numbers long")
+            print(f"{self._playerName}, please enter your {message} of {length} numbers long")
             print(
                 f"You may include the numbers 1 through {colourNum}{x}, with no seperation"
             )
@@ -241,7 +234,7 @@ class Terminal(LocalHuman):
         """
         Displays the winner of the round to the ui.
         """
-        print(f"{winner.getName()} wins this round!")
+        print(f"{winner.getPlayerName()} wins this round!")
 
     def displayWinner(self, winner: Player | None):
         """
@@ -250,18 +243,21 @@ class Terminal(LocalHuman):
         if winner is None:
             print("It's a draw!")
         else:
-            print(f"Congrats!! The winner was {winner.getName()}")
+            print(f"Congrats!! The winner was {winner.getPlayerName()}")
 
 
-class GUI(LocalHuman):
+class GUI(Player, Thread):
     """
     GUI class that inherits from the LocalHuman class
     This class is used as the LocalHuman class when displaying the game with a GUI
+    A thread is created to run the GUI in the background
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
-        pass
+    def __init__(self, playerName: str):
+        super().__init__(playerName)
+        Thread.__init__(self)
+        self.daemon = True
+        self.start()
 
     def getMove(
         self, length: int, colourNum: int, duplicatesAllowed: bool
@@ -297,14 +293,27 @@ class GUI(LocalHuman):
         """
         raise NotImplementedError()
 
+    def run(self):
+        """
+        Runs the GUI on a separate thread
+        """
+        self.__root = tk.Tk()
+        self.__root.title(f"Mastermind - {self._playerName}")
+        self.__root.protocol("WM_DELETE_WINDOW", self.__onClose)
+        self.__root.mainloop()
+
+    def __onClose(self):
+        if tkmb.askokcancel("Quit", "Do you want to quit?"):
+            self.__root.destroy()
+
 
 class NetworkingHuman(Human):
     """
     Networking human class that inherits from the Human class
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, playerName: str):
+        super().__init__(playerName)
         pass
 
 

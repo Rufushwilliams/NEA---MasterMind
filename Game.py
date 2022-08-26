@@ -113,6 +113,7 @@ class Game:
         self.__board = self.__createBoard(
             self.__length, self.__numGuesses, self.__duplicatesAllowed, self.__colourNum
         )
+        self.displayBoard()
         self.setBoardCode()
         roundWinner = None
         while roundWinner is None:
