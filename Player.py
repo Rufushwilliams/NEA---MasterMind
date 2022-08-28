@@ -454,6 +454,12 @@ class GUI(Player, Thread):
         self.__realRoot.title(f"Mastermind - {self._playerName}")
         # creates and configures the virtual root window and scroll bars
         canvas = tk.Canvas(self.__realRoot, borderwidth=0, background="#ffffff")
+        canvas.bind(
+            "<Enter>", lambda event, canvas=canvas: self.__bindMouseWheel(canvas)
+        )
+        canvas.bind(
+            "<Leave>", lambda event, canvas=canvas: self.__unbindMouseWheel(canvas)
+        )
         self.__root = tk.Frame(canvas, background="#ffffff")
         vsb = tk.Scrollbar(self.__realRoot, orient=tk.VERTICAL, command=canvas.yview)
         hsb = tk.Scrollbar(self.__realRoot, orient=tk.HORIZONTAL, command=canvas.xview)
@@ -478,7 +484,39 @@ class GUI(Player, Thread):
         if tkmb.askokcancel("Quit", "Do you want to quit?"):
             self.__realRoot.destroy()
 
-    def __onFrameConfigure(self, canvas):
+    def __bindMouseWheel(self, canvas: tk.Canvas):
+        """
+        Binds the mouse wheel to the canvas.
+        """
+        canvas.bind_all(
+            "<MouseWheel>",
+            lambda event, canvas=canvas: self.__onMouseWheel(event, canvas),
+        )
+        canvas.bind_all(
+            "<Shift-MouseWheel>",
+            lambda event, canvas=canvas: self.__onShiftMouseWheel(event, canvas),
+        )
+
+    def __unbindMouseWheel(self, canvas: tk.Canvas):
+        """
+        Unbinds the mouse wheel from the canvas.
+        """
+        canvas.unbind_all("<MouseWheel>")
+        canvas.unbind_all("<Shift-MouseWheel>")
+
+    def __onMouseWheel(self, event, canvas: tk.Canvas):
+        """
+        Handles the mouse wheel scrolling.
+        """
+        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    def __onShiftMouseWheel(self, event, canvas: tk.Canvas):
+        """
+        Handles the shift + mouse wheel scrolling.
+        """
+        canvas.xview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    def __onFrameConfigure(self, canvas: tk.Canvas):
         """
         Whenever the frame is resized, this method is called.
         This is in order to update the scroll region to encompass the inner frame.
