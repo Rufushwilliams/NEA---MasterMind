@@ -1,10 +1,8 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from threading import Thread
-from time import sleep
-import tkinter as tk
-import tkinter.messagebox as tkmb
 from random import choice, sample
+from PyQt6 import QtWidgets as qtw
+from PyQtUI import *
 from Board import Board
 import Algorithms as alg
 
@@ -251,23 +249,26 @@ class Terminal(LocalHuman):
             print(f"Congrats!! The winner was {winner.getPlayerName()}")
 
 
-class GUI(Player, Thread):
+class GUI(Player):
     """
     GUI class that inherits from the LocalHuman class
     This class is used as the LocalHuman class when displaying the game with a GUI
-    A thread is created to run the GUI in the background
     """
 
     def __init__(self, name: str):
         super().__init__(name)
-        Thread.__init__(self)
-        self.__ready = False
-        self.__colourPegMapping = None
-        self.daemon = True
-        self.start()
-        # lock main thread until the GUI is ready
-        while not self.__ready:
-            sleep(0.1)
+        self.__colourMapping = {
+            0: "#000000",
+            1: "#FF0000",
+            2: "#00FF00",
+            3: "#0000FF",
+            4: "#FFFF00",
+            5: "#00FFFF",
+            6: "#FF00FF",
+            7: "#FFA500",
+            8: "#6A0DAD",
+        }
+        self.initUI()
 
     def getMove(
         self, length: int, colourNum: int, duplicatesAllowed: bool
@@ -275,6 +276,7 @@ class GUI(Player, Thread):
         """
         Returns the players next guess.
         """
+        return [1, 2, 3, 4]
         raise NotImplementedError()
 
     def getCode(
@@ -283,245 +285,58 @@ class GUI(Player, Thread):
         """
         Returns the players code.
         """
+        return
         raise NotImplementedError()
 
     def displayBoard(self, board: Board, code: list = None):
         """
         Displays the board to the ui
         """
-        # get variables from board
-        colours = board.getColours()
-        if self.__colourPegMapping is None:
-            self.__genColourPegMapping(colours)
-        lenOfGuess = board.getLenOfGuess()
+        if any(i not in self.__colourMapping for i in board.getColours()):
+            self.__colourMapping = self.__genColourMapping(board.getColours())
         guesses = board.getGuesses()
         results = board.getResults()
+        lenOfGuess = board.getLenOfGuess()
         remainingGuesses = board.getRemainingGuesses()
-        # remove old board widget from root
-        children = self.__root.winfo_children()
-        for child in children:
-            if child.winfo_name() == "board":
-                child.destroy()
-        # create the frame for the board
-        frame = tk.Frame(self.__root, name="board")
-        row = self.__drawRow(frame, [1] * lenOfGuess)
-        resultBox = self.__drawResult(frame, lenOfGuess, [])
-        xdistance = row.winfo_width() + resultBox.winfo_width()
-        ydistance = row.winfo_height()
-        frame.config(
-            width=xdistance, height=ydistance * (len(guesses) + remainingGuesses)
+        widget = boardWidget(
+            guesses, results, lenOfGuess, remainingGuesses, self.__colourMapping
         )
-        # draw the already made guesses and results
-        for i, (guess, result) in enumerate(zip(guesses, results)):
-            c = tk.Canvas(frame, width=xdistance, height=ydistance)
-            row = self.__drawRow(c, guess)
-            row.create_text(25, 10, text=f"Guess {i+1}")
-            resultBox = self.__drawResult(c, lenOfGuess, result)
-            row.grid(row=0, column=0)
-            resultBox.grid(row=0, column=1)
-            c.pack(side=tk.BOTTOM)
-        # draw the remaining guesses
-        for i in range(remainingGuesses):
-            c = tk.Canvas(frame, width=xdistance, height=ydistance)
-            row = self.__drawRow(c, [0] * lenOfGuess)
-            row.create_text(25, 10, text=f"Guess {len(guesses)+i+1}")
-            resultBox = self.__drawResult(c, lenOfGuess, [])
-            row.grid(row=0, column=0)
-            resultBox.grid(row=0, column=1)
-            c.pack(side=tk.BOTTOM)
-        # draw the code
-        if code:
-            c = tk.Canvas(frame, width=xdistance, height=ydistance)
-            codeCanvas = self.__drawRow(c, code)
-            codeCanvas.create_text(25, 10, text="Code:")
-            codeCanvas.pack(side=tk.TOP)
-            c.pack(side=tk.BOTTOM)
-        frame.pack(side=tk.RIGHT)
+        self.__mainWindow.setCentralWidget(widget)
 
-    def __genColourPegMapping(self, colours: list[int]):
+    def __genColourMapping(self, colours: list[int]):
         """
         Generates a mapping of colours to numbers
         """
-        if self.__colourPegMapping is None:
-            self.__colourPegMapping = {
-                0: "#000000",
-                1: "#FF0000",
-                2: "#00FF00",
-                3: "#0000FF",
-                4: "#FFFF00",
-                5: "#00FFFF",
-                6: "#FF00FF",
-                7: "#FFA500",
-                8: "#6A0DAD",
-            }
         for i in colours:
-            if i not in self.__colourPegMapping:
+            if i not in self.__colourMapping:
                 colour = "#" + "".join([choice("0123456789ABCDEF") for _ in range(6)])
-                if colour not in self.__colourPegMapping.values():
-                    self.__colourPegMapping[i] = colour
-
-    def __drawRow(self, root, row: list[int]) -> tk.Canvas:
-        """
-        Creates a canvas object and draws the row to it.
-        """
-        HEIGHTOFPEG = 100
-        WIDTHOFPEG = 100
-        SPACING = 18.75
-        widthofrow = len(row) * (WIDTHOFPEG + SPACING) + SPACING
-        heightofrow = HEIGHTOFPEG + SPACING * 2
-        canvas = tk.Canvas(
-            root,
-            width=widthofrow,
-            height=heightofrow,
-            highlightthickness=1,
-            highlightbackground="black",
-        )
-        for x, peg in enumerate(row):
-            if peg not in self.__colourPegMapping:
-                self.__genColourPegMapping([peg])
-            canvas.create_oval(
-                x * (WIDTHOFPEG + SPACING) + SPACING,
-                SPACING,
-                (x + 1) * (WIDTHOFPEG + SPACING),
-                HEIGHTOFPEG + SPACING,
-                fill=self.__colourPegMapping[peg],
-            )
-        return canvas
-
-    def __drawResult(self, root, lenOfGuess: int, result: list[int]) -> tk.Canvas:
-        """
-        Creates a canvas object and draws the result to it.
-        """
-        COLOURMAPPING = {
-            0: "#000000",
-            1: "#FF0000",
-            2: "#FFFFFF",
-        }
-        HEIGHTOFPEG = 50
-        WIDTHOFPEG = 50
-        SPACING = 12.5
-        while len(result) < lenOfGuess:
-            result.append(0)
-        if (lenOfGuess % 2) == 1:
-            lenOfGuess += 1
-        widthofrow = lenOfGuess / 2 * (WIDTHOFPEG + SPACING) + SPACING
-        heightofrow = 2 * (HEIGHTOFPEG + SPACING) + SPACING
-        canvas = tk.Canvas(
-            root,
-            width=widthofrow,
-            height=heightofrow,
-            highlightthickness=1,
-            highlightbackground="black",
-        )
-        for x, peg in enumerate(result[: lenOfGuess // 2]):
-            canvas.create_oval(
-                x * (WIDTHOFPEG + SPACING) + SPACING,
-                SPACING,
-                (x + 1) * (WIDTHOFPEG + SPACING),
-                HEIGHTOFPEG + SPACING,
-                fill=COLOURMAPPING[peg],
-            )
-        for x, peg in enumerate(result[lenOfGuess // 2 :]):
-            canvas.create_oval(
-                x * (WIDTHOFPEG + SPACING) + SPACING,
-                HEIGHTOFPEG + SPACING * 2,
-                (x + 1) * (WIDTHOFPEG + SPACING),
-                (HEIGHTOFPEG + SPACING) * 2,
-                fill=COLOURMAPPING[peg],
-            )
-        return canvas
+                if colour not in self.__colourMapping.values():
+                    self.__colourMapping[i] = colour
 
     def displayRoundWinner(self, winner: Player):
         """
         Displays the winner of the round to the ui.
         """
+        return
         raise NotImplementedError()
 
     def displayWinner(self, winner: Player | None):
         """
         Displays the winner to the ui
         """
+        return
         raise NotImplementedError()
 
-    def run(self):
+    def initUI(self):
         """
-        Runs the GUI on a separate thread
+        Initialises the GUI
         """
-        # creates the actual root window and sets it up
-        self.__realRoot = tk.Tk()
-        self.__realRoot.state("zoomed")
-        self.__realRoot.protocol("WM_DELETE_WINDOW", self.__onClosing)
-        self.__realRoot.title(f"Mastermind - {self._playerName}")
-        # creates and configures the virtual root window and scroll bars
-        canvas = tk.Canvas(self.__realRoot, borderwidth=0, background="#ffffff")
-        canvas.bind(
-            "<Enter>", lambda event, canvas=canvas: self.__bindMouseWheel(canvas)
-        )
-        canvas.bind(
-            "<Leave>", lambda event, canvas=canvas: self.__unbindMouseWheel(canvas)
-        )
-        self.__root = tk.Frame(canvas, background="#ffffff")
-        vsb = tk.Scrollbar(self.__realRoot, orient=tk.VERTICAL, command=canvas.yview)
-        hsb = tk.Scrollbar(self.__realRoot, orient=tk.HORIZONTAL, command=canvas.xview)
-        canvas.configure(yscrollcommand=vsb.set)
-        canvas.configure(xscrollcommand=hsb.set)
-        vsb.pack(side=tk.RIGHT, fill=tk.Y)
-        hsb.pack(side=tk.BOTTOM, fill=tk.X)
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        canvas.create_window((4, 4), window=self.__root, anchor=tk.NW)
-        self.__root.bind(
-            "<Configure>", lambda event, canvas=canvas: self.__onFrameConfigure(canvas)
-        )
-        # set ready variable to true, start mainloop
-        self.__ready = True
-        self.__realRoot.mainloop()
-
-    def __onClosing(self):
-        """
-        Overwrites the default closing behaviour of the window.
-        Introduces a confirmation that the user wants to close the window.
-        """
-        if tkmb.askokcancel("Quit", "Do you want to quit?"):
-            self.__realRoot.destroy()
-
-    def __bindMouseWheel(self, canvas: tk.Canvas):
-        """
-        Binds the mouse wheel to the canvas.
-        """
-        canvas.bind_all(
-            "<MouseWheel>",
-            lambda event, canvas=canvas: self.__onMouseWheel(event, canvas),
-        )
-        canvas.bind_all(
-            "<Shift-MouseWheel>",
-            lambda event, canvas=canvas: self.__onShiftMouseWheel(event, canvas),
-        )
-
-    def __unbindMouseWheel(self, canvas: tk.Canvas):
-        """
-        Unbinds the mouse wheel from the canvas.
-        """
-        canvas.unbind_all("<MouseWheel>")
-        canvas.unbind_all("<Shift-MouseWheel>")
-
-    def __onMouseWheel(self, event, canvas: tk.Canvas):
-        """
-        Handles the mouse wheel scrolling.
-        """
-        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-    def __onShiftMouseWheel(self, event, canvas: tk.Canvas):
-        """
-        Handles the shift + mouse wheel scrolling.
-        """
-        canvas.xview_scroll(int(-1 * (event.delta / 120)), "units")
-
-    def __onFrameConfigure(self, canvas: tk.Canvas):
-        """
-        Whenever the frame is resized, this method is called.
-        This is in order to update the scroll region to encompass the inner frame.
-        """
-        canvas.configure(scrollregion=canvas.bbox("all"))
+        self.__mainWindow = qtw.QMainWindow()
+        self.__mainWindow.setWindowTitle(f"Mastermind: {self._playerName}")
+        self.__mainWidget = qtw.QWidget()
+        self.__mainWidget.setFixedSize(qtc.QSize(800, 600))
+        self.__mainWindow.setCentralWidget(self.__mainWidget)
+        self.__mainWindow.showMaximized()
 
 
 class NetworkingHuman(Human):
