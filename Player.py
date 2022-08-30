@@ -2,7 +2,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from random import choice, sample
 from PyQt6 import QtWidgets as qtw
-from PyQtUI import *
+from PyQt6 import QtCore as qtc
+from PyQtUI import boardWidget
 from Board import Board
 import Algorithms as alg
 
@@ -249,6 +250,9 @@ class Terminal(LocalHuman):
             print(f"Congrats!! The winner was {winner.getPlayerName()}")
 
 
+class Signals(qtc.QObject):
+    displayBoard = qtc.pyqtSignal(object, object)
+
 class GUI(Player):
     """
     GUI class that inherits from the LocalHuman class
@@ -268,6 +272,7 @@ class GUI(Player):
             7: "#FFA500",
             8: "#6A0DAD",
         }
+        self.__connectSignals()
         self.initUI()
 
     def getMove(
@@ -276,7 +281,6 @@ class GUI(Player):
         """
         Returns the players next guess.
         """
-        return [1, 2, 3, 4]
         raise NotImplementedError()
 
     def getCode(
@@ -285,10 +289,18 @@ class GUI(Player):
         """
         Returns the players code.
         """
-        return
         raise NotImplementedError()
 
-    def displayBoard(self, board: Board, code: list = None):
+
+    def displayBoard(self, board: Board, code: list[int] = None):
+        """
+        Displays the board to the ui
+        Emits a signal to the GUI to display the board.
+        This is in order to draw the GUI on the main thread
+        """
+        self.signals.displayBoard.emit(board, code)
+
+    def __displayBoard(self, board: Board, code: list[int] = None):
         """
         Displays the board to the ui
         """
@@ -317,15 +329,20 @@ class GUI(Player):
         """
         Displays the winner of the round to the ui.
         """
-        return
         raise NotImplementedError()
 
     def displayWinner(self, winner: Player | None):
         """
         Displays the winner to the ui
         """
-        return
         raise NotImplementedError()
+
+    def __connectSignals(self):
+        """
+        Connects signals to the appropriate functions
+        """
+        self.signals = Signals()
+        self.signals.displayBoard.connect(self.__displayBoard)
 
     def initUI(self):
         """

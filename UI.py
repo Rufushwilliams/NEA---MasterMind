@@ -1,10 +1,11 @@
 from typing import Type
 from abc import ABC, abstractmethod
 from time import time
+from threading import Thread
 from PyQt6 import QtWidgets as qtw
 from Game import Game
 import Algorithms as alg
-import Player
+import Player as pl
 
 
 class UI(ABC):
@@ -72,8 +73,8 @@ class GUI(UI):
         app = qtw.QApplication([])
         self.mw = qtw.QMainWindow()
         print("Welcome to Mastermind!")
-        player1 = Player.GUI("Player 1")
-        player2 = Player.GUI("Player 2")
+        player1 = pl.GUI("Player 1")
+        player2 = pl.GUI("Player 2")
         game = Game(
             player1,
             player2,
@@ -95,7 +96,8 @@ class GUI(UI):
         Starts the game
         """
         self.mw.hide()
-        game.run()
+        thread = Thread(target=game.run)
+        thread.start()
 
 
 class Terminal(UI):
@@ -207,8 +209,8 @@ class Terminal(UI):
             if choice == "1":
                 print("You have chosen to play against a computer")
                 name = input("Please enter your name: ")
-                player1 = Player.GUI(name)
-                player2 = Player.Computer("Computer", self._computerAlgorithmType)
+                player1 = pl.GUI(name)
+                player2 = pl.Computer("Computer", self._computerAlgorithmType)
                 game = Game(
                     player1,
                     player2,
@@ -223,9 +225,9 @@ class Terminal(UI):
             elif choice == "2":
                 print("You have chosen to play against another human")
                 name = input("Please enter the name of player 1: ")
-                player1 = Player.Terminal(name)
+                player1 = pl.Terminal(name)
                 name = input("Please enter the name of player 2: ")
-                player2 = Player.Terminal(name)
+                player2 = pl.Terminal(name)
                 game = Game(
                     player1,
                     player2,
@@ -240,8 +242,8 @@ class Terminal(UI):
             elif choice == "3":
                 print("You have chosen to play timed mode")
                 name = input("Please enter your name: ")
-                player1 = Player.Terminal(name)
-                player2 = Player.Computer("Computer", self._computerAlgorithmType)
+                player1 = pl.Terminal(name)
+                player2 = pl.Computer("Computer", self._computerAlgorithmType)
                 game = Game(player1, player2, 4, 6, 1, self._duplicatesAllowed, 6)
                 startTime = time()
                 game.run()
