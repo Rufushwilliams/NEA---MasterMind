@@ -251,7 +251,33 @@ class Terminal(LocalHuman):
 
 
 class Signals(qtc.QObject):
+    """
+    A class that contains the signals used by the player GUI.
+    """
+
+    getMove = qtc.pyqtSignal(int, int, bool)
+    returnGuess = qtc.pyqtSignal(list)
+    getCode = qtc.pyqtSignal(int, int, bool)
     displayBoard = qtc.pyqtSignal(object, object)
+    displayRoundWinner = qtc.pyqtSignal(object)
+    displayWinner = qtc.pyqtSignal(object)
+
+
+class loopSpinner(qtc.QEventLoop):
+    """
+    A class that is used by the GUI in order to listen for the returnGuess signal.
+    """
+
+    def __init__(self, gui):
+        super().__init__()
+        gui.signals.returnGuess.connect(self.listenForSignal)
+        self.exec()
+
+    @qtc.pyqtSlot(list)
+    def listenForSignal(self, guess: list):
+        self.result = guess
+        self.quit()
+
 
 class GUI(Player):
     """
@@ -279,6 +305,16 @@ class GUI(Player):
         self, length: int, colourNum: int, duplicatesAllowed: bool
     ) -> list[int]:
         """
+        Calls the __getMove method and returns the result.
+        Emits a signal to the GUI to get the players move.
+        This is in order to allow the GUI to update and get player input.
+        """
+        self.signals.getMove.emit(length, colourNum, duplicatesAllowed)
+        loop = loopSpinner(self)
+        return loop.result
+
+    def __getMove(self, length: int, colourNum: int, duplicatesAllowed: bool):
+        """
         Returns the players next guess.
         """
         raise NotImplementedError()
@@ -287,14 +323,23 @@ class GUI(Player):
         self, length: int, colourNum: int, duplicatesAllowed: bool
     ) -> list[int]:
         """
+        Calls the __getCode method and returns the result.
+        Emits a signal to the GUI to get the players code.
+        This is in order to allow the GUI to update and get player input.
+        """
+        self.signals.getCode.emit(length, colourNum, duplicatesAllowed)
+        loop = loopSpinner(self)
+        return loop.result
+
+    def __getCode(self, length: int, colourNum: int, duplicatesAllowed: bool):
+        """
         Returns the players code.
         """
         raise NotImplementedError()
 
-
     def displayBoard(self, board: Board, code: list[int] = None):
         """
-        Displays the board to the ui
+        Calls the __displayBoard method in the GUI.
         Emits a signal to the GUI to display the board.
         This is in order to draw the GUI on the main thread
         """
@@ -327,11 +372,27 @@ class GUI(Player):
 
     def displayRoundWinner(self, winner: Player):
         """
-        Displays the winner of the round to the ui.
+        Calls the __displayRoundWinner method in the GUI.
+        Emits a signal to the GUI to display the round winner.
+        This is in order to draw the GUI on the main thread
+        """
+        self.signals.displayRoundWinner.emit(winner)
+
+    def __displayRoundWinner(self, winner: Player):
+        """
+        Displays the winner of the round to the ui
         """
         raise NotImplementedError()
 
     def displayWinner(self, winner: Player | None):
+        """
+        Calls the __displayWinner method in the GUI.
+        Emits a signal to the GUI to display the winner.
+        This is in order to draw the GUI on the main thread
+        """
+        self.signals.displayWinner.emit(winner)
+
+    def __displayWinner(self, winner: Player | None):
         """
         Displays the winner to the ui
         """
@@ -342,7 +403,11 @@ class GUI(Player):
         Connects signals to the appropriate functions
         """
         self.signals = Signals()
+        self.signals.getMove.connect(self.__getMove)
+        self.signals.getCode.connect(self.__getCode)
         self.signals.displayBoard.connect(self.__displayBoard)
+        self.signals.displayRoundWinner.connect(self.__displayRoundWinner)
+        self.signals.displayWinner.connect(self.__displayWinner)
 
     def initUI(self):
         """

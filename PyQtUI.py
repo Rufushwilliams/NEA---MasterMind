@@ -3,7 +3,6 @@ from PyQt6 import QtGui as qtg
 from PyQt6 import QtCore as qtc
 
 
-
 class pegWidget(qtw.QFrame):
     def __init__(self, color, small=False):
         super().__init__()
