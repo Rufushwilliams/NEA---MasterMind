@@ -209,7 +209,7 @@ class Terminal(UI):
             if choice == "1":
                 print("You have chosen to play against a computer")
                 name = input("Please enter your name: ")
-                player1 = pl.GUI(name)
+                player1 = pl.Terminal(name)
                 player2 = pl.Computer("Computer", self._computerAlgorithmType)
                 game = Game(
                     player1,

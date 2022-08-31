@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from random import choice, sample
 from PyQt6 import QtWidgets as qtw
 from PyQt6 import QtCore as qtc
-from PyQtUI import boardWidget
+from PyQtUI import boardWidget, SignalsGUI, loopSpinner
 from Board import Board
 import Algorithms as alg
 
@@ -55,6 +55,13 @@ class Player(ABC):
     def displayWinner(self, winner: Player | None):
         """
         Displays the winner of the game.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def displayRoundNumber(self, roundNumber: int):
+        """
+        Displays the round number.
         """
         raise NotImplementedError()
 
@@ -113,6 +120,12 @@ class Computer(Player):
     def displayWinner(self, winner: Player | None):
         """
         The computer does not need to do anything when the game is over.
+        """
+        pass
+
+    def displayRoundNumber(self, roundNumber: int):
+        """
+        The computer does not need to do anything when the round number changes.
         """
         pass
 
@@ -249,34 +262,13 @@ class Terminal(LocalHuman):
         else:
             print(f"Congrats!! The winner was {winner.getPlayerName()}")
 
-
-class Signals(qtc.QObject):
-    """
-    A class that contains the signals used by the player GUI.
-    """
-
-    getMove = qtc.pyqtSignal(int, int, bool)
-    returnGuess = qtc.pyqtSignal(list)
-    getCode = qtc.pyqtSignal(int, int, bool)
-    displayBoard = qtc.pyqtSignal(object, object)
-    displayRoundWinner = qtc.pyqtSignal(object)
-    displayWinner = qtc.pyqtSignal(object)
-
-
-class loopSpinner(qtc.QEventLoop):
-    """
-    A class that is used by the GUI in order to listen for the returnGuess signal.
-    """
-
-    def __init__(self, gui):
-        super().__init__()
-        gui.signals.returnGuess.connect(self.listenForSignal)
-        self.exec()
-
-    @qtc.pyqtSlot(list)
-    def listenForSignal(self, guess: list):
-        self.result = guess
-        self.quit()
+    def displayRoundNumber(self, roundNumber: int):
+        """
+        Displays the round number to the ui
+        """
+        print("------------------------------")
+        print("Round " + str(roundNumber))
+        print("------------------------------")
 
 
 class GUI(Player):
@@ -309,7 +301,6 @@ class GUI(Player):
         Emits a signal to the GUI to get the players move.
         This is in order to allow the GUI to update and get player input.
         """
-        self.signals.getMove.emit(length, colourNum, duplicatesAllowed)
         loop = loopSpinner(self)
         return loop.result
 
@@ -327,7 +318,6 @@ class GUI(Player):
         Emits a signal to the GUI to get the players code.
         This is in order to allow the GUI to update and get player input.
         """
-        self.signals.getCode.emit(length, colourNum, duplicatesAllowed)
         loop = loopSpinner(self)
         return loop.result
 
@@ -356,7 +346,12 @@ class GUI(Player):
         lenOfGuess = board.getLenOfGuess()
         remainingGuesses = board.getRemainingGuesses()
         widget = boardWidget(
-            guesses, results, lenOfGuess, remainingGuesses, self.__colourMapping
+            guesses,
+            results,
+            lenOfGuess,
+            remainingGuesses,
+            self.__colourMapping,
+            signal=self.signals.returnGuess,
         )
         self.__mainWindow.setCentralWidget(widget)
 
@@ -398,11 +393,18 @@ class GUI(Player):
         """
         raise NotImplementedError()
 
+    def displayRoundNumber(self, roundNumber: int):
+        """
+        Displays the round number to the ui
+        """
+        return
+        raise NotImplementedError()
+
     def __connectSignals(self):
         """
         Connects signals to the appropriate functions
         """
-        self.signals = Signals()
+        self.signals = SignalsGUI()
         self.signals.getMove.connect(self.__getMove)
         self.signals.getCode.connect(self.__getCode)
         self.signals.displayBoard.connect(self.__displayBoard)

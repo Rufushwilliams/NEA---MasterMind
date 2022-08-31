@@ -170,14 +170,23 @@ class Game:
             self.__player1.displayWinner(self.__winner)
             self.__player2.displayWinner(self.__winner)
 
+    def displayRoundNumber(self, roundNumber: int):
+        """
+        Displays the round number to the ui.
+        Calls both players' displayRoundNumber method
+        """
+        if type(self.__player1) == Terminal and type(self.__player2) == Terminal:
+            self.__player1.displayRoundNumber(roundNumber)
+        else:
+            self.__player1.displayRoundNumber(roundNumber)
+            self.__player2.displayRoundNumber(roundNumber)
+
     def run(self):
         """
         Runs the game
         """
         for i in range(self.__numRounds):
-            print("------------------------------")
-            print("Round " + str(i + 1))
-            print("------------------------------")
+            self.displayRoundNumber(i + 1)
             self.playGameRound()
             self.switchPlayer()
         if self.__player1RoundWins > self.__player2RoundWins:
