@@ -20,18 +20,14 @@ class Player(ABC):
         return self._playerName
 
     @abstractmethod
-    def getMove(
-        self, length: int, colourNum: int, duplicatesAllowed: bool
-    ) -> list[int]:
+    def getMove(self, board: Board) -> list[int]:
         """
         Returns the players next guess.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def getCode(
-        self, length: int, colourNum: int, duplicatesAllowed: bool
-    ) -> list[int]:
+    def getCode(self, board: Board) -> list[int]:
         """
         Returns the players code.
         """
@@ -83,23 +79,24 @@ class Computer(Player):
         """
         self.__algorithm = self.__algorithmType(length, colourNum, duplicatesAllowed)
 
-    def getMove(
-        self, length: int, colourNum: int, duplicatesAllowed: bool
-    ) -> list[int]:
+    def getMove(self, board: Board) -> list[int]:
         """
         Returns the players next guess.
         """
+        length = board.getLenOfGuess()
+        colourNum = len(board.getColours())
+        duplicatesAllowed = board.getDuplicatesAllowed()
         if self.__algorithm == None:
             self.__genAlgorithm(length, colourNum, duplicatesAllowed)
         return self.__algorithm.getNextGuess(self.__getPreviousResponse())
 
-    def getCode(
-        self, length: int, colourNum: int, duplicatesAllowed: bool
-    ) -> list[int]:
+    def getCode(self, board: Board) -> list[int]:
         """
         Returns the players code.
         """
-        colourOptions = [i for i in range(1, colourNum + 1)]
+        length = board.getLenOfGuess()
+        colourOptions = board.getColours()
+        duplicatesAllowed = board.getDuplicatesAllowed()
         if not duplicatesAllowed:
             return sample(colourOptions, length)
         return [choice(colourOptions) for _ in range(length)]
@@ -168,20 +165,22 @@ class Terminal(LocalHuman):
         super().__init__(playerName)
         pass
 
-    def getMove(
-        self, length: int, colourNum: int, duplicatesAllowed: bool
-    ) -> list[int]:
+    def getMove(self, board: Board) -> list[int]:
         """
         Returns the players next guess.
         """
+        length = board.getLenOfGuess()
+        colourNum = len(board.getColours())
+        duplicatesAllowed = board.getDuplicatesAllowed()
         return self.__getPlayerInput(length, colourNum, duplicatesAllowed, "guess")
 
-    def getCode(
-        self, length: int, colourNum: int, duplicatesAllowed: bool
-    ) -> list[int]:
+    def getCode(self, board: Board) -> list[int]:
         """
         Returns the players code.
         """
+        length = board.getLenOfGuess()
+        colourNum = len(board.getColours())
+        duplicatesAllowed = board.getDuplicatesAllowed()
         return self.__getPlayerInput(length, colourNum, duplicatesAllowed, "code")
 
     def __getPlayerInput(
@@ -293,39 +292,37 @@ class GUI(Player):
         self.__connectSignals()
         self.initUI()
 
-    def getMove(
-        self, length: int, colourNum: int, duplicatesAllowed: bool
-    ) -> list[int]:
+    def getMove(self, board: Board) -> list[int]:
         """
         Calls the __getMove method and returns the result.
         Emits a signal to the GUI to get the players move.
         This is in order to allow the GUI to update and get player input.
         """
+        self.signals.getMove.emit(board)
         loop = loopSpinner(self)
         return loop.result
 
-    def __getMove(self, length: int, colourNum: int, duplicatesAllowed: bool):
+    def __getMove(self, board: Board):
         """
-        Returns the players next guess.
+        Displays the board to the GUI, and makes the guess inputtable.
         """
-        raise NotImplementedError()
+        self.__displayBoard(board, guessEditable=True)
 
-    def getCode(
-        self, length: int, colourNum: int, duplicatesAllowed: bool
-    ) -> list[int]:
+    def getCode(self, board: Board) -> list[int]:
         """
         Calls the __getCode method and returns the result.
         Emits a signal to the GUI to get the players code.
         This is in order to allow the GUI to update and get player input.
         """
+        self.signals.getCode.emit(board)
         loop = loopSpinner(self)
         return loop.result
 
-    def __getCode(self, length: int, colourNum: int, duplicatesAllowed: bool):
+    def __getCode(self, board: Board):
         """
-        Returns the players code.
+        Displays the board to the GUI, and makes the code inputtable.
         """
-        raise NotImplementedError()
+        self.__displayBoard(board, codeEditable=True)
 
     def displayBoard(self, board: Board, code: list[int] = None):
         """
@@ -335,7 +332,13 @@ class GUI(Player):
         """
         self.signals.displayBoard.emit(board, code)
 
-    def __displayBoard(self, board: Board, code: list[int] = None):
+    def __displayBoard(
+        self,
+        board: Board,
+        code: list[int] = None,
+        codeEditable: bool = False,
+        guessEditable: bool = False,
+    ):
         """
         Displays the board to the ui
         """
@@ -351,6 +354,9 @@ class GUI(Player):
             lenOfGuess,
             remainingGuesses,
             self.__colourMapping,
+            code=code,
+            codeEditable=codeEditable,
+            guessEditable=guessEditable,
             signal=self.signals.returnGuess,
         )
         self.__mainWindow.setCentralWidget(widget)
@@ -397,7 +403,6 @@ class GUI(Player):
         """
         Displays the round number to the ui
         """
-        return
         raise NotImplementedError()
 
     def __connectSignals(self):

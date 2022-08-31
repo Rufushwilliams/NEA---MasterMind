@@ -63,7 +63,8 @@ class guessWidget(qtw.QWidget):
     def __init__(self, guess: list[int], colourMapping: dict[int, str]):
         super().__init__()
         self.__guess = guess
-        self.__colourMapping = colourMapping
+        self.colourMapping = colourMapping
+        self.lenOfGuess = len(guess)
         self.pegs: list[pegWidget] = []
         self.initWidget()
         self.setFixedSize(self.sizeHint())
@@ -71,7 +72,7 @@ class guessWidget(qtw.QWidget):
     def initWidget(self):
         layout = qtw.QHBoxLayout()
         for peg in self.__guess:
-            p = pegWidget(self.__colourMapping[peg], peg)
+            p = pegWidget(self.colourMapping[peg], peg)
             self.pegs.append(p)
             layout.addWidget(p)
         # add layout to widget
@@ -105,10 +106,8 @@ class guessResultWidget(qtw.QWidget):
 
 class boardWidget(qtw.QWidget):
     ##################################################################
-    # TODO: ADD CODE DISPLAYING                                      #
+    # TODO: ORGANISE CODE BETTER                                     #
     # TODO: ORGANISE THE INPUT BUTTONS                               #
-    # TODO: MAKE IT SO ENTERING THE CODE AND THE GUESS ARE DIFFERENT #
-    # TODO: LOCK THE BOARD IF THE PLAYER ENTERED THE CODE            #
     ##################################################################
     def __init__(
         self,
@@ -118,6 +117,8 @@ class boardWidget(qtw.QWidget):
         remainingGuesses: int,
         colourMapping: dict[int, str],
         code: list[int] = None,
+        codeEditable: bool = False,
+        guessEditable: bool = False,
         signal: qtc.pyqtSignal = None,
     ):
         super().__init__()
@@ -126,7 +127,11 @@ class boardWidget(qtw.QWidget):
         self.__lenOfGuess = lenOfGuess
         self.__remainingGuesses = remainingGuesses
         self.__colourMapping = colourMapping
+        self.__code = code
+        self.__codeEditable = codeEditable
+        self.__guessEditable = guessEditable
         self.signal = signal
+        self.inputs = None
         self.initWidget()
         self.setFixedWidth(self.sizeHint().width() + 60)
         self.setSizePolicy(
@@ -139,13 +144,25 @@ class boardWidget(qtw.QWidget):
         layout.setDirection(qtw.QBoxLayout.Direction.BottomToTop)
         for guess, result in zip(self.__guesses, self.__results):
             layout.addWidget(guessResultWidget(guess, result, self.__colourMapping))
-        for i in range(self.__remainingGuesses - 1):
+        for i in range(self.__remainingGuesses):
             w = guessResultWidget(
                 [0 for _ in range(self.__lenOfGuess)], [], self.__colourMapping
             )
             layout.addWidget(w)
-            if i == 0:
-                self.inputs = pegInputGenerator(self.signal, w)
+            if i == 0 and self.__guessEditable:
+                self.inputs = pegInputGenerator(self.signal, grw=w)
+        if self.__code:
+            w = guessWidget(self.__code, self.__colourMapping)
+            layout.addWidget(w)
+        elif self.__codeEditable:
+            w = guessWidget([0 for _ in range(self.__lenOfGuess)], self.__colourMapping)
+            layout.addWidget(w)
+            self.inputs = pegInputGenerator(self.signal, gw=w)
+        if not self.inputs:
+            w = guessResultWidget(
+                [0 for _ in range(self.__lenOfGuess)], [], self.__colourMapping
+            )
+            self.inputs = pegInputGenerator(self.signal, grw=w)
 
         #########################################
         layout2 = qtw.QVBoxLayout()
@@ -197,9 +214,9 @@ class SignalsGUI(qtc.QObject):
     A class that contains the signals used by the player GUI.
     """
 
-    getMove = qtc.pyqtSignal(int, int, bool)
+    getMove = qtc.pyqtSignal(object)
     returnGuess = qtc.pyqtSignal(list)
-    getCode = qtc.pyqtSignal(int, int, bool)
+    getCode = qtc.pyqtSignal(object)
     displayBoard = qtc.pyqtSignal(object, object)
     displayRoundWinner = qtc.pyqtSignal(object)
     displayWinner = qtc.pyqtSignal(object)
@@ -242,13 +259,24 @@ class pegInputGenerator(qtc.QObject):
     Links the buttons to the widget that is passed in.
     """
 
-    def __init__(self, signal: qtc.pyqtSignal, grw: guessResultWidget):
+    def __init__(
+        self,
+        signal: qtc.pyqtSignal,
+        grw: guessResultWidget = None,
+        gw: guessWidget = None,
+    ):
         super().__init__()
+        if grw:
+            self.widget = grw
+            self.pegs = grw.gw.pegs
+        elif gw:
+            self.widget = gw
+            self.pegs = gw.pegs
+        else:
+            raise TypeError("Either grw or gw must be passed in.")
         self.signal = signal
-        self.grw = grw
-        self.pegs = grw.gw.pegs
-        self.__lenOfGuess = grw.lenOfGuess
-        self.__colourMapping = grw.colourMapping
+        self.__lenOfGuess = self.widget.lenOfGuess
+        self.__colourMapping = self.widget.colourMapping
         self.__pegPointer = 0
         self.initWidget()
 
@@ -276,7 +304,7 @@ class pegInputGenerator(qtc.QObject):
         # find the first peg that is not black and replace it with the colour
         self.pegs[self.__pegPointer].updatePeg(colour, value)
         self.__updatePegPointer()
-        self.grw.update()
+        self.widget.update()
 
     def __updatePegPointer(self):
         if self.__pegPointer < self.__lenOfGuess - 1:
@@ -284,19 +312,30 @@ class pegInputGenerator(qtc.QObject):
         else:
             self.__pegPointer = 0
 
+    def __clearButtonBindings(self):
+        for button in self.pegButtons:
+            button.clicked.disconnect()
+        for button in self.fnButtons:
+            button.clicked.disconnect()
+
     def onClear(self):
         self.__pegPointer = 0
         for peg in self.pegs:
             peg.updatePeg(self.__colourMapping[0], 0)
-        self.grw.update()
+        self.widget.update()
 
     def getValues(self):
         pegValues = [peg.value for peg in self.pegs]
         if 0 not in pegValues:
+            self.__clearButtonBindings()
             self.signal.emit(pegValues)
 
 
 if __name__ == "__main__":
+    
+    ############################
+    # TODO: TIDY UP WHOLE FILE #
+    ############################
 
     lenOfGuess = 4
     colourMapping = {

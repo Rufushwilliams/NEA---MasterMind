@@ -69,11 +69,7 @@ class Game:
         """
         Returns the current players next guess
         """
-        return self.__currentPlayer.getMove(
-            self.__board.getLenOfGuess(),
-            len(self.__board.getColours()),
-            self.__board.getDuplicatesAllowed(),
-        )
+        return self.__currentPlayer.getMove(self.__board)
 
     def setBoardCode(self, random: bool = False):
         """
@@ -82,21 +78,9 @@ class Game:
         """
         if not random:
             if self.__currentPlayer == self.__player1:
-                self.__board.setCode(
-                    self.__player2.getCode(
-                        self.__board.getLenOfGuess(),
-                        len(self.__board.getColours()),
-                        self.__board.getDuplicatesAllowed(),
-                    )
-                )
+                self.__board.setCode(self.__player2.getCode(self.__board))
             else:
-                self.__board.setCode(
-                    self.__player1.getCode(
-                        self.__board.getLenOfGuess(),
-                        len(self.__board.getColours()),
-                        self.__board.getDuplicatesAllowed(),
-                    )
-                )
+                self.__board.setCode(self.__player1.getCode(self.__board))
         else:
             self.__board.setCode()
 
@@ -113,7 +97,6 @@ class Game:
         self.__board = self.__createBoard(
             self.__length, self.__numGuesses, self.__duplicatesAllowed, self.__colourNum
         )
-        self.displayBoard()
         self.setBoardCode()
         roundWinner = None
         while roundWinner is None:
