@@ -97,6 +97,7 @@ class GUI(UI):
         """
         self.mw.hide()
         thread = Thread(target=game.run)
+        thread.daemon = True
         thread.start()
 
 

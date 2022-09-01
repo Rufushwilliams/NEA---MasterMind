@@ -6,14 +6,12 @@ from PyQt6 import QtCore as qtc
 class pegWidget(qtw.QFrame):
     def __init__(self, colour, value: int, small=False):
         super().__init__()
-        self.value = value
         if small:
             self.setFixedSize(50, 50)
         else:
             self.setFixedSize(100, 100)
         self.borderRadius = self.width() / 2
-        self.colour = colour
-        self.updateStyleSheet()
+        self.updatePeg(colour, value)
 
     def setColour(self, colour):
         self.colour = colour
@@ -34,7 +32,7 @@ class resultWidget(qtw.QWidget):
         super().__init__()
         self.__lenOfGuess = lenOfGuess
         self.__result = result
-        self.__colourMapping = {0: "black", 1: "red", 2: "white"}
+        self.__colourMapping = {0: "#000000", 1: "#ff0000", 2: "#ffffff"}
         self.initWidget()
         self.setFixedSize(self.sizeHint())
 
@@ -79,6 +77,49 @@ class guessWidget(qtw.QWidget):
         self.setLayout(layout)
 
 
+class mysteryPegWidget(qtw.QFrame):
+    def __init__(self, colour, value: int):
+        super().__init__()
+        self.setFixedSize(100, 100)
+        self.defaultColour = colour
+        self.borderRadius = self.width() / 2
+        self.updatePeg(colour, value)
+
+    def setColour(self, colour):
+        self.colour = colour
+        if colour == self.defaultColour:
+            # add QUESTION MARK
+            pass
+        self.updateStyleSheet()
+
+    def updateStyleSheet(self):
+        self.setStyleSheet(
+            f"border-radius: {self.borderRadius}px; border: 1px solid black; background-color: {self.colour};"
+        )
+
+    def updatePeg(self, colour, value: int):
+        self.value = value
+        self.setColour(colour)
+
+
+class hiddenCodeWidget(qtw.QWidget):
+    def __init__(self, lenOfCode: int, colourMapping: dict[int, str]):
+        super().__init__()
+        self.colourMapping = colourMapping
+        self.lenOfGuess = lenOfCode
+        self.pegs: list[pegWidget] = []
+        self.initWidget()
+        self.setFixedSize(self.sizeHint())
+
+    def initWidget(self):
+        layout = qtw.QHBoxLayout()
+        for _ in range(self.lenOfGuess):
+            p = mysteryPegWidget(self.colourMapping[0], 0)
+            self.pegs.append(p)
+            layout.addWidget(p)
+        self.setLayout(layout)
+
+
 class guessResultWidget(qtw.QWidget):
     def __init__(
         self, guess: list[int], result: list[int], colourMapping: dict[int, str]
@@ -105,10 +146,12 @@ class guessResultWidget(qtw.QWidget):
 
 
 class boardWidget(qtw.QWidget):
-    ##################################################################
-    # TODO: ORGANISE CODE BETTER                                     #
-    # TODO: ORGANISE THE INPUT BUTTONS                               #
-    ##################################################################
+    """
+    Widget that contains the guesses and results of the game.
+    Also generates the code widget and the input widgets.
+    Stores them in codeWidget and inputs respectively.
+    """
+
     def __init__(
         self,
         guesses: list[list[int]],
@@ -151,32 +194,20 @@ class boardWidget(qtw.QWidget):
             layout.addWidget(w)
             if i == 0 and self.__guessEditable:
                 self.inputs = pegInputGenerator(self.signal, grw=w)
+
         if self.__code:
-            w = guessWidget(self.__code, self.__colourMapping)
-            layout.addWidget(w)
-        elif self.__codeEditable:
-            w = guessWidget([0 for _ in range(self.__lenOfGuess)], self.__colourMapping)
-            layout.addWidget(w)
-            self.inputs = pegInputGenerator(self.signal, gw=w)
+            self.codeWidget = guessWidget(self.__code, self.__colourMapping)
+        else:
+            self.codeWidget = hiddenCodeWidget(self.__lenOfGuess, self.__colourMapping)
+        if self.__codeEditable:
+            self.inputs = pegInputGenerator(self.signal, gw=self.codeWidget)
+        self.codeWidget = scrollArea(self.codeWidget)
         if not self.inputs:
             w = guessResultWidget(
                 [0 for _ in range(self.__lenOfGuess)], [], self.__colourMapping
             )
             self.inputs = pegInputGenerator(self.signal, grw=w)
 
-        #########################################
-        layout2 = qtw.QVBoxLayout()
-        layout3 = qtw.QHBoxLayout()
-        for button in self.inputs.pegButtons:
-            layout3.addWidget(button)
-        layout4 = qtw.QHBoxLayout()
-        for button in self.inputs.fnButtons:
-            layout4.addWidget(button)
-        layout2.addLayout(layout3)
-        layout2.addLayout(layout4)
-        ###########################################
-
-        layout.addLayout(layout2)
         widget.setLayout(layout)
         layout = qtw.QHBoxLayout()
         layout.addWidget(scrollArea(widget))
@@ -261,7 +292,7 @@ class pegInputGenerator(qtc.QObject):
 
     def __init__(
         self,
-        signal: qtc.pyqtSignal,
+        signal: qtc.pyqtSignal = None,
         grw: guessResultWidget = None,
         gw: guessWidget = None,
     ):
@@ -326,25 +357,94 @@ class pegInputGenerator(qtc.QObject):
 
     def getValues(self):
         pegValues = [peg.value for peg in self.pegs]
-        if 0 not in pegValues:
+        if 0 not in pegValues and self.signal:
             self.__clearButtonBindings()
             self.signal.emit(pegValues)
 
 
+class gameWidget(qtw.QWidget):
+    def __init__(
+        self,
+        guesses: list[list[int]],
+        results: list[list[int]],
+        lenOfGuess: int,
+        remainingGuesses: int,
+        colourMapping: dict[int, str],
+        code: list[int] = None,
+        codeEditable: bool = False,
+        guessEditable: bool = False,
+        signal: qtc.pyqtSignal = None,
+    ):
+        super().__init__()
+        self.__guesses = guesses
+        self.__results = results
+        self.__lenOfGuess = lenOfGuess
+        self.__remainingGuesses = remainingGuesses
+        self.__colourMapping = colourMapping
+        self.__code = code
+        self.__codeEditable = codeEditable
+        self.__guessEditable = guessEditable
+        self.__signal = signal
+        self.initWidget()
+
+    def initWidget(self):
+        bw = boardWidget(
+            self.__guesses,
+            self.__results,
+            self.__lenOfGuess,
+            self.__remainingGuesses,
+            self.__colourMapping,
+            self.__code,
+            self.__codeEditable,
+            self.__guessEditable,
+            self.__signal,
+        )
+        pegButtons = bw.inputs.pegButtons
+        fnButtons = bw.inputs.fnButtons
+        cw = bw.codeWidget
+        primaryLayout = qtw.QGridLayout()
+        pegButtonLayout = qtw.QGridLayout()
+        if len(pegButtons) > 7:
+            for i, button in enumerate(pegButtons):
+                pegButtonLayout.addWidget(button, i // 2, i % 2)
+        else:
+            for i, button in enumerate(pegButtons):
+                pegButtonLayout.addWidget(button, i, 0)
+        pegButtonWidget = qtw.QWidget()
+        pegButtonWidget.setLayout(pegButtonLayout)
+        pegButtonWidget.setFixedSize(pegButtonWidget.sizeHint())
+        pegButtonWidget = scrollArea(pegButtonWidget)
+
+        fnButtonLayout = qtw.QHBoxLayout()
+        for button in fnButtons:
+            fnButtonLayout.addWidget(button)
+        primaryLayout.addWidget(bw, 0, 0, 5, 4)
+        primaryLayout.addWidget(pegButtonWidget, 0, 4, 5, 1)
+        primaryLayout.addWidget(cw, 0, 5, 1, 3)
+        primaryLayout.addLayout(fnButtonLayout, 1, 5, 1, 3)
+        ##############################################################################
+        # TODO: ADD A WIDGET THAT CAN BE USED TO WRITE ON                            #
+        # TODO: E.G. Write enter your guess {num} or write the winners of the rounds #
+        ##############################################################################
+        self.setLayout(primaryLayout)
+
+
 if __name__ == "__main__":
-    
+
     ############################
     # TODO: TIDY UP WHOLE FILE #
+    # TODO: ORGANISE CODE      #
     ############################
 
     lenOfGuess = 4
     colourMapping = {
-        0: "Black",
-        1: "Red",
-        2: "Yellow",
-        3: "Green",
-        4: "Blue",
-        5: "orange",
+        0: "#000000",
+        1: "#ff0000",
+        2: "#00ff00",
+        3: "#0000ff",
+        4: "#ffff00",
+        5: "#00ffff",
+        6: "#ff00ff",
     }
 
     app = qtw.QApplication([])

@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from random import choice, sample
 from PyQt6 import QtWidgets as qtw
 from PyQt6 import QtCore as qtc
-from PyQtUI import boardWidget, SignalsGUI, loopSpinner
+from PyQtUI import gameWidget, SignalsGUI, loopSpinner
 from Board import Board
 import Algorithms as alg
 
@@ -278,17 +278,8 @@ class GUI(Player):
 
     def __init__(self, name: str):
         super().__init__(name)
-        self.__colourMapping = {
-            0: "#000000",
-            1: "#FF0000",
-            2: "#00FF00",
-            3: "#0000FF",
-            4: "#FFFF00",
-            5: "#00FFFF",
-            6: "#FF00FF",
-            7: "#FFA500",
-            8: "#6A0DAD",
-        }
+        self.__colourMapping = {0: "#000000"}
+        self.__code = None
         self.__connectSignals()
         self.initUI()
 
@@ -316,6 +307,7 @@ class GUI(Player):
         """
         self.signals.getCode.emit(board)
         loop = loopSpinner(self)
+        self.__code = loop.result
         return loop.result
 
     def __getCode(self, board: Board):
@@ -343,18 +335,18 @@ class GUI(Player):
         Displays the board to the ui
         """
         if any(i not in self.__colourMapping for i in board.getColours()):
-            self.__colourMapping = self.__genColourMapping(board.getColours())
+            self.__genColourMapping(board.getColours())
         guesses = board.getGuesses()
         results = board.getResults()
         lenOfGuess = board.getLenOfGuess()
         remainingGuesses = board.getRemainingGuesses()
-        widget = boardWidget(
+        widget = gameWidget(
             guesses,
             results,
             lenOfGuess,
             remainingGuesses,
             self.__colourMapping,
-            code=code,
+            code=code if code else self.__code,
             codeEditable=codeEditable,
             guessEditable=guessEditable,
             signal=self.signals.returnGuess,
@@ -365,11 +357,27 @@ class GUI(Player):
         """
         Generates a mapping of colours to numbers
         """
+        colourMapping = {
+            0: "#000000",
+            1: "#FF0000",
+            2: "#00FF00",
+            3: "#0000FF",
+            4: "#FFFF00",
+            5: "#00FFFF",
+            6: "#FF00FF",
+            7: "#FFA500",
+            8: "#6A0DAD",
+        }
         for i in colours:
             if i not in self.__colourMapping:
-                colour = "#" + "".join([choice("0123456789ABCDEF") for _ in range(6)])
-                if colour not in self.__colourMapping.values():
-                    self.__colourMapping[i] = colour
+                if i in colourMapping:
+                    self.__colourMapping[i] = colourMapping[i]
+                else:
+                    colour = "#" + "".join(
+                        [choice("0123456789ABCDEF") for _ in range(6)]
+                    )
+                    if colour not in self.__colourMapping.values():
+                        self.__colourMapping[i] = colour
 
     def displayRoundWinner(self, winner: Player):
         """
@@ -403,6 +411,7 @@ class GUI(Player):
         """
         Displays the round number to the ui
         """
+        return
         raise NotImplementedError()
 
     def __connectSignals(self):
