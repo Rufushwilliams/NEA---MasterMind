@@ -1,3 +1,4 @@
+from time import sleep
 from Player import Player, Terminal
 from Board import Board
 
@@ -141,6 +142,7 @@ class Game:
         else:
             self.__player1.displayRoundWinner(roundWinner)
             self.__player2.displayRoundWinner(roundWinner)
+        sleep(2)
 
     def displayWinner(self):
         """
@@ -152,6 +154,7 @@ class Game:
         else:
             self.__player1.displayWinner(self.__winner)
             self.__player2.displayWinner(self.__winner)
+        sleep(3)
 
     def displayRoundNumber(self, roundNumber: int):
         """

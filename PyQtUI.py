@@ -1,3 +1,4 @@
+from typing import Callable
 from PyQt6 import QtWidgets as qtw
 from PyQt6 import QtGui as qtg
 from PyQt6 import QtCore as qtc
@@ -122,9 +123,14 @@ class hiddenCodeWidget(qtw.QWidget):
 
 class guessResultWidget(qtw.QWidget):
     def __init__(
-        self, guess: list[int], result: list[int], colourMapping: dict[int, str]
+        self,
+        guess: list[int],
+        result: list[int],
+        colourMapping: dict[int, str],
+        num: int = None,
     ):
         super().__init__()
+        self.__num = num
         self.__guess = guess
         self.lenOfGuess = len(guess)
         self.__result = result
@@ -136,6 +142,8 @@ class guessResultWidget(qtw.QWidget):
     def initWidget(self):
         # create layout
         layout = qtw.QHBoxLayout()
+        if self.__num:
+            layout.addWidget(qtw.QLabel(f"{self.__num}"))
         # add guess widget to layout
         self.gw = guessWidget(self.__guess, self.colourMapping)
         layout.addWidget(self.gw)
@@ -185,11 +193,16 @@ class boardWidget(qtw.QWidget):
         widget = qtw.QWidget()
         layout = qtw.QVBoxLayout()
         layout.setDirection(qtw.QBoxLayout.Direction.BottomToTop)
-        for guess, result in zip(self.__guesses, self.__results):
-            layout.addWidget(guessResultWidget(guess, result, self.__colourMapping))
+        for i, (guess, result) in enumerate(zip(self.__guesses, self.__results)):
+            layout.addWidget(
+                guessResultWidget(guess, result, self.__colourMapping, i + 1)
+            )
         for i in range(self.__remainingGuesses):
             w = guessResultWidget(
-                [0 for _ in range(self.__lenOfGuess)], [], self.__colourMapping
+                [0 for _ in range(self.__lenOfGuess)],
+                [],
+                self.__colourMapping,
+                i + 1 + len(self.__guesses),
             )
             layout.addWidget(w)
             if i == 0 and self.__guessEditable:
@@ -201,7 +214,9 @@ class boardWidget(qtw.QWidget):
             self.codeWidget = hiddenCodeWidget(self.__lenOfGuess, self.__colourMapping)
         if self.__codeEditable:
             self.inputs = pegInputGenerator(self.signal, gw=self.codeWidget)
+        cwHeight = self.codeWidget.sizeHint().height()
         self.codeWidget = scrollArea(self.codeWidget)
+        self.codeWidget.setFixedHeight(cwHeight + 25)
         if not self.inputs:
             w = guessResultWidget(
                 [0 for _ in range(self.__lenOfGuess)], [], self.__colourMapping
@@ -284,6 +299,22 @@ class pegInput(qtw.QPushButton):
         )
 
 
+class buttonSubmit(qtw.QPushButton):
+    def __init__(self, text: str):
+        super().__init__(text)
+        self.commands: list[Callable] = []
+        self.clicked.connect(self.executeCommands)
+
+    def executeCommands(self):
+        for command in self.commands:
+            x = command()
+            if x is False:
+                break
+
+    def addCommand(self, command: Callable):
+        self.commands.append(command)
+
+
 class pegInputGenerator(qtc.QObject):
     """
     Creates buttons for the peg input.
@@ -323,13 +354,13 @@ class pegInputGenerator(qtc.QObject):
             )
             self.pegButtons.append(button)
 
-        self.fnButtons = []
+        self.fnButtons = {}
         buttonc = qtw.QPushButton("Clear")
         buttonc.clicked.connect(self.onClear)
-        buttonf = qtw.QPushButton("Print Values")
-        buttonf.clicked.connect(self.getValues)
-        self.fnButtons.append(buttonc)
-        self.fnButtons.append(buttonf)
+        buttonf = buttonSubmit("Submit")
+        buttonf.addCommand(self.getValues)
+        self.fnButtons["Clear"] = buttonc
+        self.fnButtons["Submit"] = buttonf
 
     def onClick(self, colour: str, value: int):
         # find the first peg that is not black and replace it with the colour
@@ -346,7 +377,7 @@ class pegInputGenerator(qtc.QObject):
     def __clearButtonBindings(self):
         for button in self.pegButtons:
             button.clicked.disconnect()
-        for button in self.fnButtons:
+        for button in self.fnButtons.values():
             button.clicked.disconnect()
 
     def onClear(self):
@@ -360,6 +391,32 @@ class pegInputGenerator(qtc.QObject):
         if 0 not in pegValues and self.signal:
             self.__clearButtonBindings()
             self.signal.emit(pegValues)
+        else:
+            return False
+
+
+class messageWidget(qtw.QFrame):
+    def __init__(self, message: str):
+        super().__init__()
+        self.message = message
+        self.initWidget()
+        self.setFrameShape(qtw.QFrame.Shape.Box)
+        self.sizePolicy = qtw.QSizePolicy()
+        self.sizePolicy.setHorizontalPolicy(qtw.QSizePolicy.Policy.Expanding)
+        self.sizePolicy.setVerticalPolicy(qtw.QSizePolicy.Policy.Expanding)
+        self.setSizePolicy(self.sizePolicy)
+
+    def initWidget(self):
+        layout = qtw.QVBoxLayout()
+        label = qtw.QLabel(self.message)
+        label.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(label)
+        self.setLayout(layout)
+
+    def updateMessage(self, message: str):
+        self.message = message
+        self.layout().itemAt(0).widget().setText(message)
+        self.update()
 
 
 class gameWidget(qtw.QWidget):
@@ -374,6 +431,7 @@ class gameWidget(qtw.QWidget):
         codeEditable: bool = False,
         guessEditable: bool = False,
         signal: qtc.pyqtSignal = None,
+        message: str = None,
     ):
         super().__init__()
         self.__guesses = guesses
@@ -385,6 +443,7 @@ class gameWidget(qtw.QWidget):
         self.__codeEditable = codeEditable
         self.__guessEditable = guessEditable
         self.__signal = signal
+        self.__message = message
         self.initWidget()
 
     def initWidget(self):
@@ -415,17 +474,19 @@ class gameWidget(qtw.QWidget):
         pegButtonWidget.setFixedSize(pegButtonWidget.sizeHint())
         pegButtonWidget = scrollArea(pegButtonWidget)
 
+        self.messageWidget = messageWidget(self.__message)
+
         fnButtonLayout = qtw.QHBoxLayout()
-        for button in fnButtons:
+        fnButtons["Submit"].addCommand(
+            lambda w=self.messageWidget: w.updateMessage("Waiting for other player...")
+        )
+        for button in fnButtons.values():
             fnButtonLayout.addWidget(button)
         primaryLayout.addWidget(bw, 0, 0, 5, 4)
         primaryLayout.addWidget(pegButtonWidget, 0, 4, 5, 1)
         primaryLayout.addWidget(cw, 0, 5, 1, 3)
         primaryLayout.addLayout(fnButtonLayout, 1, 5, 1, 3)
-        ##############################################################################
-        # TODO: ADD A WIDGET THAT CAN BE USED TO WRITE ON                            #
-        # TODO: E.G. Write enter your guess {num} or write the winners of the rounds #
-        ##############################################################################
+        primaryLayout.addWidget(self.messageWidget, 2, 5, 3, 3)
         self.setLayout(primaryLayout)
 
 

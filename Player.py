@@ -279,9 +279,14 @@ class GUI(Player):
     def __init__(self, name: str):
         super().__init__(name)
         self.__colourMapping = {0: "#000000"}
-        self.__code = None
+        self.__roundNum = None
+        self.initRound()
         self.__connectSignals()
         self.initUI()
+
+    def initRound(self):
+        self.__guessNum = 1
+        self.__code = None
 
     def getMove(self, board: Board) -> list[int]:
         """
@@ -297,7 +302,12 @@ class GUI(Player):
         """
         Displays the board to the GUI, and makes the guess inputtable.
         """
-        self.__displayBoard(board, guessEditable=True)
+        self.__displayBoard(
+            board,
+            guessEditable=True,
+            message=f"Please enter guess number {self.__guessNum}",
+        )
+        self.__guessNum += 1
 
     def getCode(self, board: Board) -> list[int]:
         """
@@ -314,7 +324,7 @@ class GUI(Player):
         """
         Displays the board to the GUI, and makes the code inputtable.
         """
-        self.__displayBoard(board, codeEditable=True)
+        self.__displayBoard(board, codeEditable=True, message="Enter your code")
 
     def displayBoard(self, board: Board, code: list[int] = None):
         """
@@ -330,6 +340,7 @@ class GUI(Player):
         code: list[int] = None,
         codeEditable: bool = False,
         guessEditable: bool = False,
+        message: str = None,
     ):
         """
         Displays the board to the ui
@@ -340,7 +351,7 @@ class GUI(Player):
         results = board.getResults()
         lenOfGuess = board.getLenOfGuess()
         remainingGuesses = board.getRemainingGuesses()
-        widget = gameWidget(
+        self.widget = gameWidget(
             guesses,
             results,
             lenOfGuess,
@@ -350,8 +361,17 @@ class GUI(Player):
             codeEditable=codeEditable,
             guessEditable=guessEditable,
             signal=self.signals.returnGuess,
+            message=self.__getMessage(message)
+            if message
+            else self.__getMessage("Please wait..."),
         )
-        self.__mainWindow.setCentralWidget(widget)
+        self.__mainWindow.setCentralWidget(self.widget)
+
+    def __getMessage(self, message: str):
+        """
+        Generates the message
+        """
+        return f"Round Number {str(self.__roundNum)}:\n{message}"
 
     def __genColourMapping(self, colours: list[int]):
         """
@@ -391,7 +411,9 @@ class GUI(Player):
         """
         Displays the winner of the round to the ui
         """
-        raise NotImplementedError()
+        self.initRound()
+        message = self.__getMessage(f"{winner.getPlayerName()} wins this round!")
+        self.widget.messageWidget.updateMessage(message)
 
     def displayWinner(self, winner: Player | None):
         """
@@ -405,14 +427,19 @@ class GUI(Player):
         """
         Displays the winner to the ui
         """
-        raise NotImplementedError()
+        self.initRound()
+        message = (
+            f"{winner.getPlayerName()} wins the game!" if winner else "It's a draw!"
+        )
+        self.widget.messageWidget.updateMessage(message)
+        timer = qtc.QTimer()
+        timer.singleShot(3000, self.__mainWindow.hide)
 
     def displayRoundNumber(self, roundNumber: int):
         """
-        Displays the round number to the ui
+        Saves the round number in order to display it to the UI
         """
-        return
-        raise NotImplementedError()
+        self.__roundNum = roundNumber
 
     def __connectSignals(self):
         """

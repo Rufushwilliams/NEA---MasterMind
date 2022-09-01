@@ -1,8 +1,9 @@
 from typing import Type
 from abc import ABC, abstractmethod
 from time import time
-from threading import Thread
+import threading
 from PyQt6 import QtWidgets as qtw
+from PyQt6.QtCore import QTimer
 from Game import Game
 import Algorithms as alg
 import Player as pl
@@ -65,6 +66,8 @@ class GUI(UI):
             colourNum,
             computerAlgorithmType,
         )
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.checkIfOnlyThread)
 
     def run(self):
         """
@@ -80,7 +83,7 @@ class GUI(UI):
             player2,
             self._length,
             self._numGuesses,
-            1,
+            self._numRounds,
             self._duplicatesAllowed,
             self._colourNum,
         )
@@ -96,9 +99,19 @@ class GUI(UI):
         Starts the game
         """
         self.mw.hide()
-        thread = Thread(target=game.run)
+        thread = threading.Thread(target=game.run)
         thread.daemon = True
         thread.start()
+        self.timer.start(1000)
+
+    def checkIfOnlyThread(self):
+        """
+        Checks if there are any other threads running.
+        If there are not, then show the main window and stop the timer
+        """
+        if threading.active_count() == 1:
+            self.mw.show()
+            self.timer.stop()
 
 
 class Terminal(UI):
