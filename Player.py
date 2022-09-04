@@ -351,6 +351,7 @@ class GUI(Player):
         results = board.getResults()
         lenOfGuess = board.getLenOfGuess()
         remainingGuesses = board.getRemainingGuesses()
+        duplicatesAllowed = board.getDuplicatesAllowed()
         self.widget = gameWidget(
             guesses,
             results,
@@ -361,6 +362,7 @@ class GUI(Player):
             codeEditable=codeEditable,
             guessEditable=guessEditable,
             signal=self.signals.returnGuess,
+            duplicatesAllowed=duplicatesAllowed,
             message=self.__getMessage(message)
             if message
             else self.__getMessage("Please wait..."),

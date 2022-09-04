@@ -171,6 +171,7 @@ class boardWidget(qtw.QWidget):
         codeEditable: bool = False,
         guessEditable: bool = False,
         signal: qtc.pyqtSignal = None,
+        duplicatesAllowed: bool = True,
     ):
         super().__init__()
         self.__guesses = guesses
@@ -182,6 +183,7 @@ class boardWidget(qtw.QWidget):
         self.__codeEditable = codeEditable
         self.__guessEditable = guessEditable
         self.signal = signal
+        self.__duplicatesAllowed = duplicatesAllowed
         self.inputs = None
         self.initWidget()
         self.setFixedWidth(self.sizeHint().width() + 60)
@@ -206,14 +208,20 @@ class boardWidget(qtw.QWidget):
             )
             layout.addWidget(w)
             if i == 0 and self.__guessEditable:
-                self.inputs = pegInputGenerator(self.signal, grw=w)
+                self.inputs = pegInputGenerator(
+                    self.signal, grw=w, duplicatesAllowed=self.__duplicatesAllowed
+                )
 
         if self.__code:
             self.codeWidget = guessWidget(self.__code, self.__colourMapping)
         else:
             self.codeWidget = hiddenCodeWidget(self.__lenOfGuess, self.__colourMapping)
         if self.__codeEditable:
-            self.inputs = pegInputGenerator(self.signal, gw=self.codeWidget)
+            self.inputs = pegInputGenerator(
+                self.signal,
+                gw=self.codeWidget,
+                duplicatesAllowed=self.__duplicatesAllowed,
+            )
         cwHeight = self.codeWidget.sizeHint().height()
         self.codeWidget = scrollArea(self.codeWidget)
         self.codeWidget.setFixedHeight(cwHeight + 25)
@@ -326,6 +334,7 @@ class pegInputGenerator(qtc.QObject):
         signal: qtc.pyqtSignal = None,
         grw: guessResultWidget = None,
         gw: guessWidget = None,
+        duplicatesAllowed: bool = True,
     ):
         super().__init__()
         if grw:
@@ -337,6 +346,7 @@ class pegInputGenerator(qtc.QObject):
         else:
             raise TypeError("Either grw or gw must be passed in.")
         self.signal = signal
+        self.__duplicatesAllowed = duplicatesAllowed
         self.__lenOfGuess = self.widget.lenOfGuess
         self.__colourMapping = self.widget.colourMapping
         self.__pegPointer = 0
@@ -358,7 +368,7 @@ class pegInputGenerator(qtc.QObject):
         buttonc = qtw.QPushButton("Clear")
         buttonc.clicked.connect(self.onClear)
         buttonf = buttonSubmit("Submit")
-        buttonf.addCommand(self.getValues)
+        buttonf.addCommand(lambda: self.getValues(self.__duplicatesAllowed))
         self.fnButtons["Clear"] = buttonc
         self.fnButtons["Submit"] = buttonf
 
@@ -386,9 +396,11 @@ class pegInputGenerator(qtc.QObject):
             peg.updatePeg(self.__colourMapping[0], 0)
         self.widget.update()
 
-    def getValues(self):
+    def getValues(self, duplicatesAllowed: bool):
         pegValues = [peg.value for peg in self.pegs]
-        if 0 not in pegValues and self.signal:
+        if (0 not in pegValues and self.signal) and (
+            duplicatesAllowed or len(set(pegValues)) == len(pegValues)
+        ):
             self.__clearButtonBindings()
             self.signal.emit(pegValues)
         else:
@@ -431,6 +443,7 @@ class gameWidget(qtw.QWidget):
         codeEditable: bool = False,
         guessEditable: bool = False,
         signal: qtc.pyqtSignal = None,
+        duplicatesAllowed: bool = True,
         message: str = None,
     ):
         super().__init__()
@@ -443,6 +456,7 @@ class gameWidget(qtw.QWidget):
         self.__codeEditable = codeEditable
         self.__guessEditable = guessEditable
         self.__signal = signal
+        self.__duplicatesAllowed = duplicatesAllowed
         self.__message = message
         self.initWidget()
 
@@ -457,6 +471,7 @@ class gameWidget(qtw.QWidget):
             self.__codeEditable,
             self.__guessEditable,
             self.__signal,
+            self.__duplicatesAllowed,
         )
         pegButtons = bw.inputs.pegButtons
         fnButtons = bw.inputs.fnButtons
