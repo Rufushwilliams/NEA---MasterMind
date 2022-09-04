@@ -4,6 +4,7 @@ from time import time
 import threading
 from PyQt6 import QtWidgets as qtw
 from PyQt6.QtCore import QTimer
+import PyQtMainUI as qtui
 from Game import Game
 import Algorithms as alg
 import Player as pl
@@ -68,37 +69,107 @@ class GUI(UI):
         )
         self.timer = QTimer()
         self.timer.timeout.connect(self.checkIfOnlyThread)
+        self.initUI()
 
     def run(self):
         """
         Runs the GUI
         """
-        app = qtw.QApplication([])
-        self.mw = qtw.QMainWindow()
-        print("Welcome to Mastermind!")
-        player1 = pl.GUI("Player 1")
-        player2 = pl.GUI("Player 2")
-        game = Game(
-            player1,
-            player2,
-            self._length,
-            self._numGuesses,
-            self._numRounds,
-            self._duplicatesAllowed,
-            self._colourNum,
+        self.mainWindow.showMaximized()
+
+    def initUI(self):
+        # Create the main window
+        self.mainWindow = qtw.QMainWindow()
+        self.mainWidget = qtw.QStackedWidget()
+        self.mainWindow.setCentralWidget(self.mainWidget)
+        self.mainWindow.setWindowTitle("Mastermind")
+        # Create all the pages
+        self.loginPage = qtui.LoginPage()
+        self.welcomePage = qtui.WelcomePage()
+        self.rulesPage = qtui.RulesPage()
+        self.modePage = qtui.ModePage()
+        self.readyPage = qtui.ReadyPage()
+        self.advancedSetupPage = qtui.AdvancedSetupPage()
+        # Add all the pages to the main widget
+        self.mainWidget.addWidget(self.loginPage)
+        self.mainWidget.addWidget(self.welcomePage)
+        self.mainWidget.addWidget(self.rulesPage)
+        self.mainWidget.addWidget(self.modePage)
+        self.mainWidget.addWidget(self.readyPage)
+        self.mainWidget.addWidget(self.advancedSetupPage)
+        # Setup the buttons on the pages
+        ####################################
+        # TODO: ADD FUNCTIONALITY TO LOGIN #
+        ####################################
+        self.loginPage.bindLoginButton(self.showWelcomePage)
+        self.welcomePage.bindRulesButton(self.showRulesPage)
+        self.welcomePage.bindStartButton(self.showModePage)
+        self.rulesPage.bindBackButton(self.showWelcomePage)
+        self.modePage.bindSingleplayerButton(
+            lambda: self.setMode(qtui.gameModes.SINGLEPLAYER)
         )
-        button = qtw.QPushButton("Click Me")
-        button.clicked.connect(lambda: self.startGame(game))
-        self.mw.setCentralWidget(button)
-        self.mw.showMaximized()
-        app.exec()
-        raise NotImplementedError()
+        self.modePage.bindMultiplayerButton(
+            lambda: self.setMode(qtui.gameModes.MULTIPLAYER)
+        )
+        self.modePage.bindBackButton(self.showWelcomePage)
+        self.readyPage.bindStartButton(self.initGame)
+        self.readyPage.bindAdvancedSetupButton(self.showAdvancedSetupPage)
+        self.readyPage.bindBackButton(self.showModePage)
+        ##################################################
+        # TODO: ADD FUNCTIONALITY TO ADVANCED SETUP PAGE #
+        ##################################################
+        self.advancedSetupPage.bindConfirmButton(lambda: print("Confirm"))
+        self.advancedSetupPage.bindBackButton(self.showReadyPage)
+
+    def showLoginPage(self):
+        self.mainWidget.setCurrentWidget(self.loginPage)
+
+    def showWelcomePage(self):
+        self.mainWidget.setCurrentWidget(self.welcomePage)
+
+    def showRulesPage(self):
+        self.mainWidget.setCurrentWidget(self.rulesPage)
+
+    def showModePage(self):
+        self.mainWidget.setCurrentWidget(self.modePage)
+
+    def showReadyPage(self):
+        self.mainWidget.setCurrentWidget(self.readyPage)
+
+    def showAdvancedSetupPage(self):
+        self.mainWidget.setCurrentWidget(self.advancedSetupPage)
+
+    def setMode(self, mode: qtui.gameModes):
+        self._mode = mode
+        self.showReadyPage()
+
+    def initGame(self):
+        # create the players depending on the mode
+        if self._mode == qtui.gameModes.SINGLEPLAYER:
+            player1 = pl.GUI("Player 1")
+            player2 = pl.Computer("Computer", self._computerAlgorithmType)
+        elif self._mode == qtui.gameModes.MULTIPLAYER:
+            player1 = pl.GUI("Player 1")
+            player2 = pl.GUI("Player 2")
+        else:
+            raise ValueError("Invalid mode")
+        game = Game(
+            player1=player1,
+            player2=player2,
+            length=self._length,
+            numGuesses=self._numGuesses,
+            numRounds=self._numRounds,
+            duplicatesAllowed=self._duplicatesAllowed,
+            colourNum=self._colourNum,
+        )
+        self.startGame(game)
+        self.showWelcomePage()
 
     def startGame(self, game):
         """
         Starts the game
         """
-        self.mw.hide()
+        self.mainWindow.hide()
         thread = threading.Thread(target=game.run)
         thread.daemon = True
         thread.start()
@@ -110,7 +181,7 @@ class GUI(UI):
         If there are not, then show the main window and stop the timer
         """
         if threading.active_count() == 1:
-            self.mw.show()
+            self.show()
             self.timer.stop()
 
 

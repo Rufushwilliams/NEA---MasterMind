@@ -490,30 +490,7 @@ class gameWidget(qtw.QWidget):
         self.setLayout(primaryLayout)
 
 
-if __name__ == "__main__":
-
-    ############################
-    # TODO: TIDY UP WHOLE FILE #
-    # TODO: ORGANISE CODE      #
-    ############################
-
-    lenOfGuess = 4
-    colourMapping = {
-        0: "#000000",
-        1: "#ff0000",
-        2: "#00ff00",
-        3: "#0000ff",
-        4: "#ffff00",
-        5: "#00ffff",
-        6: "#ff00ff",
-    }
-
-    app = qtw.QApplication([])
-    mw = qtw.QMainWindow()
-    mw.setWindowTitle("Test")
-
-    widget = boardWidget([[1, 2, 3, 4]], [[]], 4, 4, colourMapping)
-
-    mw.setCentralWidget(widget)
-    mw.showMaximized()
-    app.exec()
+############################
+# TODO: TIDY UP WHOLE FILE #
+# TODO: ORGANISE CODE      #
+############################

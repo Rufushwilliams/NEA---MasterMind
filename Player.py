@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from random import choice, sample
 from PyQt6 import QtWidgets as qtw
 from PyQt6 import QtCore as qtc
-from PyQtUI import gameWidget, SignalsGUI, loopSpinner
+from PyQtPlayerUI import gameWidget, SignalsGUI, loopSpinner
 from Board import Board
 import Algorithms as alg
 

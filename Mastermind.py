@@ -1,4 +1,6 @@
 from sys import argv
+from PyQt6.QtWidgets import QApplication
+from PyQt6.QtCore import QTimer
 from UI import GUI, Terminal
 
 
@@ -19,7 +21,10 @@ if __name__ == "__main__":
         ui = Terminal()
         ui.run()
     elif argv[1] == "g":
+        app = QApplication([])
         ui = GUI()
-        ui.run()
+        timer = QTimer()
+        timer.singleShot(100, ui.run)
+        app.exec()
     else:
         usage()
