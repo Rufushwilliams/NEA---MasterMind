@@ -181,7 +181,7 @@ class GUI(UI):
         If there are not, then show the main window and stop the timer
         """
         if threading.active_count() == 1:
-            self.show()
+            self.mainWindow.show()
             self.timer.stop()
 
 

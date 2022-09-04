@@ -406,6 +406,7 @@ class GUI(Player):
         This is in order to draw the GUI on the main thread
         """
         self.signals.displayRoundWinner.emit(winner)
+        loopSpinner(self)
 
     def __displayRoundWinner(self, winner: Player):
         """
@@ -413,7 +414,12 @@ class GUI(Player):
         """
         self.initRound()
         message = self.__getMessage(f"{winner.getPlayerName()} wins this round!")
-        self.widget.messageWidget.updateMessage(message)
+        msgBox = qtw.QMessageBox()
+        msgBox.setWindowTitle("Round Winner")
+        msgBox.setText(message)
+        msgBox.setIcon(qtw.QMessageBox.Icon.Information)
+        msgBox.exec()
+        self.signals.returnGuess.emit([])
 
     def displayWinner(self, winner: Player | None):
         """
@@ -422,6 +428,7 @@ class GUI(Player):
         This is in order to draw the GUI on the main thread
         """
         self.signals.displayWinner.emit(winner)
+        loopSpinner(self)
 
     def __displayWinner(self, winner: Player | None):
         """
@@ -431,9 +438,13 @@ class GUI(Player):
         message = (
             f"{winner.getPlayerName()} wins the game!" if winner else "It's a draw!"
         )
-        self.widget.messageWidget.updateMessage(message)
-        timer = qtc.QTimer()
-        timer.singleShot(3000, self.__mainWindow.hide)
+        msgBox = qtw.QMessageBox()
+        msgBox.setWindowTitle("Round Winner")
+        msgBox.setText(message)
+        msgBox.setIcon(qtw.QMessageBox.Icon.Information)
+        msgBox.exec()
+        self.signals.returnGuess.emit([])
+        self.__mainWindow.hide()
 
     def displayRoundNumber(self, roundNumber: int):
         """
