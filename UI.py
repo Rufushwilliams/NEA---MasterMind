@@ -89,7 +89,15 @@ class GUI(UI):
         self.rulesPage = qtui.RulesPage()
         self.modePage = qtui.ModePage()
         self.readyPage = qtui.ReadyPage()
-        self.advancedSetupPage = qtui.AdvancedSetupPage()
+        self.advancedSetupPage = qtui.AdvancedSetupPage(
+            self._length,
+            self._numGuesses,
+            self._duplicatesAllowed,
+            self._colourNum,
+            self._numRounds,
+            self.ALGORITHMTYPES,
+            self._computerAlgorithmType,
+        )
         # Add all the pages to the main widget
         self.mainWidget.addWidget(self.loginPage)
         self.mainWidget.addWidget(self.welcomePage)
@@ -115,11 +123,9 @@ class GUI(UI):
         self.readyPage.bindStartButton(self.initGame)
         self.readyPage.bindAdvancedSetupButton(self.showAdvancedSetupPage)
         self.readyPage.bindBackButton(self.showModePage)
-        ##################################################
-        # TODO: ADD FUNCTIONALITY TO ADVANCED SETUP PAGE #
-        ##################################################
-        self.advancedSetupPage.bindConfirmButton(lambda: print("Confirm"))
-        self.advancedSetupPage.bindBackButton(self.showReadyPage)
+        self.advancedSetupPage.bindConfirmButton(
+            lambda: [self.setValuesFromAdvanced(), self.showReadyPage()]
+        )
 
     def showLoginPage(self):
         self.mainWidget.setCurrentWidget(self.loginPage)
@@ -142,6 +148,15 @@ class GUI(UI):
     def setMode(self, mode: qtui.gameModes):
         self._mode = mode
         self.showReadyPage()
+
+    def setValuesFromAdvanced(self):
+        values = self.advancedSetupPage.readOptionValues()
+        self._length = values["length"]
+        self._numGuesses = values["numGuesses"]
+        self._duplicatesAllowed = values["duplicatesAllowed"]
+        self._colourNum = values["colourNum"]
+        self._numRounds = values["numRounds"]
+        self._computerAlgorithmType = values["computerAlgorithmType"]
 
     def initGame(self):
         # create the players depending on the mode

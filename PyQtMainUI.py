@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Callable
 from PyQt6 import QtWidgets as qtw
 from PyQt6 import QtGui as qtg
+from PyQt6 import QtCore as qtc
 
 
 class LoginPage(qtw.QWidget):
@@ -141,37 +142,165 @@ class ReadyPage(qtw.QWidget):
         self.backButton.clicked.connect(func)
 
 
+class sliderOptionWidget(qtw.QWidget):
+    def __init__(
+        self, variable: str, defaultValue: int, label: str, min: int = 1, max: int = 99
+    ):
+        super().__init__()
+        self.setLayout(qtw.QVBoxLayout())
+        self.variable = variable
+        self.labelText = label
+        self.defaultValue = defaultValue
+        self.initSlider(min, max)
+        self.initLabel()
+        self.layout().addWidget(self.label)
+        self.layout().addWidget(self.slider)
+
+    def initSlider(self, min: int, max: int):
+        self.slider = qtw.QSlider()
+        self.slider.setOrientation(qtc.Qt.Orientation.Horizontal)
+        self.slider.setRange(min, max)
+        self.slider.setValue(self.defaultValue)
+        self.slider.valueChanged.connect(self.onSliderMove)
+
+    def initLabel(self):
+        self.label = qtw.QLabel(f"{self.labelText}: {self.defaultValue}")
+        self.label.setFont(qtg.QFont("Times", 20))
+
+    def onSliderMove(self):
+        self.label.setText(f"{self.labelText}: {self.slider.value()}")
+
+    def restoreDefaultValue(self):
+        self.slider.setValue(self.defaultValue)
+
+    def getValue(self):
+        return self.slider.value()
+
+
+class radioButtonOptionWidget(qtw.QWidget):
+    def __init__(self, variable: str, defaultValue, options: list[tuple], label: str):
+        super().__init__()
+        self.setLayout(qtw.QVBoxLayout())
+        self.variable = variable
+        self.labelText = label
+        self.defaultValue = defaultValue
+        self.initLabel()
+        self.initButtons(options)
+        self.layout().addWidget(self.label)
+        for button in self.buttons:
+            self.layout().addWidget(button)
+        self.restoreDefaultValue()
+
+    def initLabel(self):
+        self.label = qtw.QLabel(f"{self.labelText}: {self.defaultValue}")
+        self.label.setFont(qtg.QFont("Times", 20))
+
+    def initButtons(self, options: list[tuple]):
+        self.buttons = []
+        for value, label in options:
+            button = qtw.QRadioButton(str(label))
+            button.value = value
+            button.setFont(qtg.QFont("Times", 20))
+            button.toggled.connect(self.onButtonToggle)
+            self.buttons.append(button)
+
+    def onButtonToggle(self):
+        for button in self.buttons:
+            if button.isChecked():
+                self.label.setText(f"{self.labelText}: {button.text()}")
+
+    def restoreDefaultValue(self):
+        for button in self.buttons:
+            if button.value == self.defaultValue:
+                button.setChecked(True)
+
+    def getValue(self):
+        for button in self.buttons:
+            if button.isChecked():
+                return button.value
+
+
 class AdvancedSetupPage(qtw.QWidget):
-    def __init__(self):
+    def __init__(
+        self,
+        codeLengthDefault: int = 4,
+        guessesDefault: int = 6,
+        duplicatesAllowedDefault: bool = True,
+        coloursDefault: int = 6,
+        numRoundsDefault: int = 3,
+        algorithmTypes: dict[int, str] = None,
+        algorithmTypeDefault=None,
+    ):
         super().__init__()
         self.setLayout(qtw.QVBoxLayout())
         advancedSetupLabel = qtw.QLabel("Advanced Setup")
         advancedSetupLabel.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(advancedSetupLabel)
+
+        self.options = []
+        codeLengthSlider = sliderOptionWidget(
+            "length", codeLengthDefault, "Code Length", 1, 99
+        )
+        self.options.append(codeLengthSlider)
+        self.layout().addWidget(codeLengthSlider)
+        guessesSlider = sliderOptionWidget(
+            "numGuesses", guessesDefault, "Guesses", 1, 99
+        )
+        self.options.append(guessesSlider)
+        self.layout().addWidget(guessesSlider)
+        duplicatesAllowedRadio = radioButtonOptionWidget(
+            "duplicatesAllowed",
+            duplicatesAllowedDefault,
+            [(True, True), (False, False)],
+            "Duplicates Allowed",
+        )
+        self.options.append(duplicatesAllowedRadio)
+        self.layout().addWidget(duplicatesAllowedRadio)
+        uniquePegsSlider = sliderOptionWidget(
+            "colourNum", coloursDefault, "Unique Pegs", 1, 99
+        )
+        self.options.append(uniquePegsSlider)
+        self.layout().addWidget(uniquePegsSlider)
+        numRoundsSlider = sliderOptionWidget(
+            "numRounds", numRoundsDefault, "Number of Rounds", 1, 99
+        )
+        self.options.append(numRoundsSlider)
+        self.layout().addWidget(numRoundsSlider)
+        algorithmTypeRadio = radioButtonOptionWidget(
+            "computerAlgorithmType",
+            algorithmTypeDefault,
+            [(value, value.__name__) for _, value in algorithmTypes.items()],
+            "Algorithm Type",
+        )
+        self.options.append(algorithmTypeRadio)
+        self.layout().addWidget(algorithmTypeRadio)
+
+        restoreDefaultsButton = qtw.QPushButton("Restore Defaults")
+        restoreDefaultsButton.setFixedWidth(300)
+        restoreDefaultsButton.setFixedHeight(50)
+        restoreDefaultsButton.setFont(qtg.QFont("Times", 20))
+        restoreDefaultsButton.clicked.connect(lambda: self.restoreDefaultValues())
+        self.layout().addWidget(restoreDefaultsButton)
         self.confirmButton = qtw.QPushButton("Confirm")
         self.confirmButton.setFixedWidth(300)
         self.confirmButton.setFixedHeight(50)
         self.confirmButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.confirmButton)
-        self.backButton = qtw.QPushButton("Back")
-        self.backButton.setFixedWidth(300)
-        self.backButton.setFixedHeight(50)
-        self.backButton.setFont(qtg.QFont("Times", 20))
-        self.layout().addWidget(self.backButton)
+
+    def restoreDefaultValues(self):
+        for option in self.options:
+            option.restoreDefaultValue()
+
+    def readOptionValues(self) -> dict[str, any]:
+        values = {}
+        for option in self.options:
+            values[option.variable] = option.getValue()
+        return values
 
     def bindConfirmButton(self, func: Callable):
         self.confirmButton.clicked.connect(func)
-
-    def bindBackButton(self, func: Callable):
-        self.backButton.clicked.connect(func)
 
 
 class gameModes(Enum):
     SINGLEPLAYER = 1
     MULTIPLAYER = 2
-
-
-if __name__ == "__main__":
-    app = qtw.QApplication([])
-    mw = qtw.mainUIWindow()
-    app.exec()
