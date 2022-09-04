@@ -1,6 +1,5 @@
 from typing import Type
 from abc import ABC, abstractmethod
-from time import time
 import threading
 from PyQt6 import QtWidgets as qtw
 from PyQt6.QtCore import QTimer
@@ -8,6 +7,18 @@ import PyQtMainUI as qtui
 from Game import Game
 import Algorithms as alg
 import Player as pl
+
+
+class ResultThread(threading.Thread):
+    """
+    A thread that saves the result of the function it runs in thread.value
+    """
+    def __init__(self, *args, **kwargs):
+        threading.Thread.__init__(self, *args, **kwargs)
+        self.value = None
+
+    def run(self):
+        self.value = self._target(*self._args, **self._kwargs)
 
 
 class UI(ABC):
@@ -119,6 +130,9 @@ class GUI(UI):
         self.modePage.bindMultiplayerButton(
             lambda: self.setMode(qtui.gameModes.MULTIPLAYER)
         )
+        self.modePage.bindTimedButton(
+            lambda: self.setMode(qtui.gameModes.TIMED, start=True)
+        )
         self.modePage.bindBackButton(self.showWelcomePage)
         self.readyPage.bindStartButton(self.initGame)
         self.readyPage.bindAdvancedSetupButton(self.showAdvancedSetupPage)
@@ -145,9 +159,12 @@ class GUI(UI):
     def showAdvancedSetupPage(self):
         self.mainWidget.setCurrentWidget(self.advancedSetupPage)
 
-    def setMode(self, mode: qtui.gameModes):
+    def setMode(self, mode: qtui.gameModes, start: bool = False):
         self._mode = mode
-        self.showReadyPage()
+        if start:
+            self.initGame()
+        else:
+            self.showReadyPage()
 
     def setValuesFromAdvanced(self):
         values = self.advancedSetupPage.readOptionValues()
@@ -159,36 +176,73 @@ class GUI(UI):
         self._computerAlgorithmType = values["computerAlgorithmType"]
 
     def initGame(self):
-        # create the players depending on the mode
+        """
+        Setup the game depending on the mode and other settings.
+        Then call startGame.
+        """
+        length = self._length
+        numGuesses = self._numGuesses
+        duplicatesAllowed = self._duplicatesAllowed
+        numRounds = self._numRounds
+        colourNum = self._colourNum
+        timed = False
         if self._mode == qtui.gameModes.SINGLEPLAYER:
             player1 = pl.GUI("Player 1")
             player2 = pl.Computer("Computer", self._computerAlgorithmType)
         elif self._mode == qtui.gameModes.MULTIPLAYER:
             player1 = pl.GUI("Player 1")
             player2 = pl.GUI("Player 2")
+        elif self._mode == qtui.gameModes.TIMED:
+            player1 = pl.GUI("Player 1", popups=False)
+            player2 = pl.Computer("Computer", self._computerAlgorithmType)
+            length = 4
+            numGuesses = 6
+            duplicatesAllowed = True
+            numRounds = 1
+            colourNum = 6
+            timed = True
         else:
             raise ValueError("Invalid mode")
         game = Game(
             player1=player1,
             player2=player2,
-            length=self._length,
-            numGuesses=self._numGuesses,
-            numRounds=self._numRounds,
-            duplicatesAllowed=self._duplicatesAllowed,
-            colourNum=self._colourNum,
+            length=length,
+            numGuesses=numGuesses,
+            numRounds=numRounds,
+            duplicatesAllowed=duplicatesAllowed,
+            colourNum=colourNum,
         )
-        self.startGame(game)
+        self.startGame(game, timed)
         self.showWelcomePage()
 
-    def startGame(self, game):
+    def startGame(self, game, timed: bool = False):
         """
         Starts the game
         """
         self.mainWindow.hide()
-        thread = threading.Thread(target=game.run)
+        thread = ResultThread(target=game.run)
         thread.daemon = True
+        if timed:
+            # if timed mode is enabled, start a timer
+            self.timedModeTimer = QTimer()
+            self.timedModeTimer.timeout.connect(lambda gameThread=thread: self.ifTimedGameOver(gameThread))
+            self.timedModeTimer.start(1000)
         thread.start()
         self.timer.start(1000)
+
+    def ifTimedGameOver(self, gameThread):
+        if not gameThread.is_alive():
+            self.timedModeTimer.stop()
+            timeTaken, won = gameThread.value
+            if won:
+                msg = f"You took {timeTaken} seconds to win!"
+            else:
+                msg = "You lost!"
+            msgBox = qtw.QMessageBox()
+            msgBox.setWindowTitle("Timed Game Over")
+            msgBox.setText(msg)
+            msgBox.setIcon(qtw.QMessageBox.Icon.Information)
+            msgBox.exec()
 
     def checkIfOnlyThread(self):
         """
@@ -344,12 +398,13 @@ class Terminal(UI):
                 name = input("Please enter your name: ")
                 player1 = pl.Terminal(name)
                 player2 = pl.Computer("Computer", self._computerAlgorithmType)
-                game = Game(player1, player2, 4, 6, 1, self._duplicatesAllowed, 6)
-                startTime = time()
-                game.run()
-                endTime = time()
+                game = Game(player1, player2, 4, 6, 1, True, 6)
+                timeTaken, win = game.run()
                 print("-------------------------------------------------------")
-                print(f"You have finished in {endTime-startTime} seconds")
+                if win:
+                    print(f"You have finished in {timeTaken} seconds")
+                else:
+                    print("You have lost")
                 continue
             elif choice == "4":
                 self.setup()

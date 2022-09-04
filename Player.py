@@ -276,8 +276,9 @@ class GUI(Player):
     This class is used as the LocalHuman class when displaying the game with a GUI
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, popups: bool = True):
         super().__init__(name)
+        self.__popups = popups
         self.__colourMapping = {0: "#000000"}
         self.__roundNum = None
         self.initRound()
@@ -408,20 +409,22 @@ class GUI(Player):
         This is in order to draw the GUI on the main thread
         """
         self.signals.displayRoundWinner.emit(winner)
-        loopSpinner(self)
+        if self.__popups:
+            loopSpinner(self)
 
     def __displayRoundWinner(self, winner: Player):
         """
         Displays the winner of the round to the ui
         """
         self.initRound()
-        message = self.__getMessage(f"{winner.getPlayerName()} wins this round!")
-        msgBox = qtw.QMessageBox()
-        msgBox.setWindowTitle("Round Winner")
-        msgBox.setText(message)
-        msgBox.setIcon(qtw.QMessageBox.Icon.Information)
-        msgBox.exec()
-        self.signals.returnGuess.emit([])
+        if self.__popups:
+            message = self.__getMessage(f"{winner.getPlayerName()} wins this round!")
+            msgBox = qtw.QMessageBox()
+            msgBox.setWindowTitle("Round Winner")
+            msgBox.setText(message)
+            msgBox.setIcon(qtw.QMessageBox.Icon.Information)
+            msgBox.exec()
+            self.signals.returnGuess.emit([])
 
     def displayWinner(self, winner: Player | None):
         """
@@ -430,22 +433,24 @@ class GUI(Player):
         This is in order to draw the GUI on the main thread
         """
         self.signals.displayWinner.emit(winner)
-        loopSpinner(self)
+        if self.__popups:
+            loopSpinner(self)
 
     def __displayWinner(self, winner: Player | None):
         """
         Displays the winner to the ui
         """
         self.initRound()
-        message = (
-            f"{winner.getPlayerName()} wins the game!" if winner else "It's a draw!"
-        )
-        msgBox = qtw.QMessageBox()
-        msgBox.setWindowTitle("Round Winner")
-        msgBox.setText(message)
-        msgBox.setIcon(qtw.QMessageBox.Icon.Information)
-        msgBox.exec()
-        self.signals.returnGuess.emit([])
+        if self.__popups:
+            message = (
+                f"{winner.getPlayerName()} wins the game!" if winner else "It's a draw!"
+            )
+            msgBox = qtw.QMessageBox()
+            msgBox.setWindowTitle("Round Winner")
+            msgBox.setText(message)
+            msgBox.setIcon(qtw.QMessageBox.Icon.Information)
+            msgBox.exec()
+            self.signals.returnGuess.emit([])
         self.__mainWindow.hide()
 
     def displayRoundNumber(self, roundNumber: int):

@@ -96,6 +96,11 @@ class ModePage(qtw.QWidget):
         self.multiplayerButton.setFixedHeight(50)
         self.multiplayerButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.multiplayerButton)
+        self.timedButton = qtw.QPushButton("Timed Mode")
+        self.timedButton.setFixedWidth(300)
+        self.timedButton.setFixedHeight(50)
+        self.timedButton.setFont(qtg.QFont("Times", 20))
+        self.layout().addWidget(self.timedButton)
         self.backButton = qtw.QPushButton("Back")
         self.backButton.setFixedWidth(300)
         self.backButton.setFixedHeight(50)
@@ -107,6 +112,9 @@ class ModePage(qtw.QWidget):
 
     def bindMultiplayerButton(self, func: Callable):
         self.multiplayerButton.clicked.connect(func)
+    
+    def bindTimedButton(self, func: Callable):
+        self.timedButton.clicked.connect(func)
 
     def bindBackButton(self, func: Callable):
         self.backButton.clicked.connect(func)
@@ -228,7 +236,7 @@ class AdvancedSetupPage(qtw.QWidget):
         duplicatesAllowedDefault: bool = True,
         coloursDefault: int = 6,
         numRoundsDefault: int = 3,
-        algorithmTypes: dict[int, str] = None,
+        algorithmTypes: dict = None,
         algorithmTypeDefault=None,
     ):
         super().__init__()
@@ -304,3 +312,4 @@ class AdvancedSetupPage(qtw.QWidget):
 class gameModes(Enum):
     SINGLEPLAYER = 1
     MULTIPLAYER = 2
+    TIMED = 3

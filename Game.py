@@ -1,3 +1,4 @@
+from time import time
 from Player import Player, Terminal
 from Board import Board
 
@@ -166,8 +167,9 @@ class Game:
 
     def run(self):
         """
-        Runs the game
+        Runs the game and returns a tuple of the time taken to run and if player1 won
         """
+        startTime = time()
         for i in range(self.__numRounds):
             self.displayRoundNumber(i + 1)
             self.playGameRound()
@@ -179,3 +181,6 @@ class Game:
         else:
             self.__winner = None
         self.displayWinner()
+        endTime = time()
+        return (endTime - startTime, self.__winner == self.__player1)
+
