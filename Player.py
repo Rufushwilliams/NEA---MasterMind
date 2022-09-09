@@ -490,18 +490,3 @@ class NetworkingHuman(Human):
     def __init__(self, playerName: str):
         super().__init__(playerName)
         pass
-
-
-class Statistics:
-    """
-    Statistics class that stores the statistics of a human player
-    """
-
-    def __init__(self):
-        pass
-
-    def getStats(self):
-        pass
-
-    def setStats(self):
-        pass
