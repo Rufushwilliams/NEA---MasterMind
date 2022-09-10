@@ -307,6 +307,9 @@ class GUI(Player):
         self.__guessNum = 1
         self.__code = None
 
+    def setPopups(self, popups: bool):
+        self.__popups = popups
+
     def getMove(self, board: Board) -> list[int]:
         """
         Calls the __getMove method and returns the result.
@@ -488,6 +491,9 @@ class GUI(Player):
         self.signals.displayRoundWinner.connect(self.__displayRoundWinner)
         self.signals.displayWinner.connect(self.__displayWinner)
 
+    def show(self):
+        self.__mainWindow.showMaximized()
+
     def initUI(self):
         """
         Initialises the GUI
@@ -497,7 +503,6 @@ class GUI(Player):
         self.__mainWidget = qtw.QWidget()
         self.__mainWidget.setFixedSize(qtc.QSize(800, 600))
         self.__mainWindow.setCentralWidget(self.__mainWidget)
-        self.__mainWindow.showMaximized()
 
 
 class NetworkingHuman(Human):

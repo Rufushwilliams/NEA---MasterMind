@@ -5,6 +5,9 @@ import sqlite3
 
 
 class dataBaseManager:
+    ################################################
+    # TODO: REWRITE THIS CLASS TO USE WITH KEYWORD #
+    ################################################
     def __init__(self, db: str):
         self.conn = sqlite3.connect(db)
         self.cur = self.conn.cursor()
@@ -105,50 +108,3 @@ class Statistics:
     totalGames: int = 0
     roundsPlayed: int = 0
     timePlayed: float = 0.0
-
-
-def main():
-    db = "users.db"
-    dbm = dataBaseManager(db)
-    x = dbm.register("test", "test123")
-    if x:
-        print("Registered")
-    else:
-        print("Username already taken")
-    x = dbm.register("rufus2", "password")
-    if x:
-        print("Registered")
-    else:
-        print("Username already taken")
-
-    x = dbm.login("test2", "test123")
-    if x:
-        print("Logged in")
-    else:
-        print("Incorrect username or password")
-
-    # y = dbm.createStatsTable("test")
-    # print(y)
-    # y.totalGames += 1
-    # y.wins += 1
-    # print(y)
-    # dbm.saveStatsTable(y)
-
-    # choice = input("Register or Login? (1/2): ")
-    # if choice == "1":
-    #     x = dbm.register("test", "test")
-    #     if x:
-    #         print("Registered!")
-    #     else:
-    #         print("There was an unexpected error")
-    # else:
-    #     user = input("Username: ")
-    #     password = input("Password: ")
-    #     if dbm.login(user, password):
-    #         print("Logged in!")
-    #     else:
-    #         print("Incorrect username or password")
-
-
-if __name__ == "__main__":
-    main()

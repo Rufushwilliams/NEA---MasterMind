@@ -35,6 +35,39 @@ class LoginPage(qtw.QWidget):
         self.loginButton.setFixedHeight(50)
         self.loginButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.loginButton)
+        self.registerButton = qtw.QPushButton("Register")
+        self.registerButton.setFixedWidth(250)
+        self.registerButton.setFixedHeight(50)
+        self.registerButton.setFont(qtg.QFont("Times", 20))
+        self.layout().addWidget(self.registerButton)
+
+    def showLoginError(self):
+        error = qtw.QMessageBox()
+        error.setIcon(qtw.QMessageBox.Icon.Critical)
+        error.setText("Incorrect username or password")
+        error.setWindowTitle("Error")
+        error.exec()
+
+    def showLoginSuccess(self):
+        success = qtw.QMessageBox()
+        success.setIcon(qtw.QMessageBox.Icon.Information)
+        success.setText("Logged in!")
+        success.setWindowTitle("Success")
+        success.exec()
+
+    def showRegisterError(self):
+        error = qtw.QMessageBox()
+        error.setIcon(qtw.QMessageBox.Icon.Critical)
+        error.setText("Username already taken")
+        error.setWindowTitle("Error")
+        error.exec()
+
+    def showRegisterSuccess(self):
+        success = qtw.QMessageBox()
+        success.setIcon(qtw.QMessageBox.Icon.Information)
+        success.setText("Registered!")
+        success.setWindowTitle("Success")
+        success.exec()
 
     def updateUsernameText(self, text: str):
         self.usernameText = text
@@ -50,6 +83,9 @@ class LoginPage(qtw.QWidget):
 
     def bindLoginButton(self, func: Callable):
         self.loginButton.clicked.connect(func)
+
+    def bindRegisterButton(self, func: Callable):
+        self.registerButton.clicked.connect(func)
 
 
 class WelcomePage(qtw.QWidget):

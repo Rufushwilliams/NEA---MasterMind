@@ -51,6 +51,12 @@ class Game:
     def getCurrentPlayer(self) -> Player:
         return self.__currentPlayer
 
+    def getPlayer1(self) -> Player:
+        return self.__player1
+
+    def getPlayer2(self) -> Player:
+        return self.__player2
+
     def getBoard(self) -> Board:
         return self.__board
 

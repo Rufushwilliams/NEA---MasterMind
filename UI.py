@@ -83,8 +83,6 @@ class GUI(UI):
             colourNum,
             computerAlgorithmType,
         )
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.checkIfOnlyThread)
         self.initUI()
 
     def run(self):
@@ -122,11 +120,13 @@ class GUI(UI):
         self.mainWidget.addWidget(self.readyPage)
         self.mainWidget.addWidget(self.advancedSetupPage)
         # Setup the buttons on the pages
-        ####################################
-        # TODO: ADD FUNCTIONALITY TO LOGIN #
-        ####################################
         self.loginPage.bindLoginButton(
             lambda e: self.tryLogin(
+                self.loginPage.getUsername(), self.loginPage.getPassword()
+            )
+        )
+        self.loginPage.bindRegisterButton(
+            lambda e: self.tryRegister(
                 self.loginPage.getUsername(), self.loginPage.getPassword()
             )
         )
@@ -184,6 +184,30 @@ class GUI(UI):
         self._numRounds = values["numRounds"]
         self._computerAlgorithmType = values["computerAlgorithmType"]
 
+    def tryLogin(self, username: str, password: str, player1: bool = True):
+        if username and self._dbm.login(username, password):
+            stats = self._dbm.createStatsTable(username)
+            if player1:
+                self.player1 = pl.GUI(stats)
+            else:
+                self.player2 = pl.GUI(stats)
+            self.loginPage.showLoginSuccess()
+            self.showWelcomePage()
+        else:
+            self.loginPage.showLoginError()
+
+    def tryRegister(self, username: str, password: str, player1: bool = True):
+        if username and password and self._dbm.register(username, password):
+            stats = self._dbm.createStatsTable(username)
+            if player1:
+                self.player1 = pl.GUI(stats)
+            else:
+                self.player2 = pl.GUI(stats)
+            self.loginPage.showRegisterSuccess()
+            self.showWelcomePage()
+        else:
+            self.loginPage.showRegisterError()
+
     def initGame(self):
         """
         Setup the game depending on the mode and other settings.
@@ -196,14 +220,19 @@ class GUI(UI):
         colourNum = self._colourNum
         timed = False
         if self._mode == qtui.gameModes.SINGLEPLAYER:
-            player1 = pl.GUI("Player 1")
-            player2 = pl.Computer("Computer", self._computerAlgorithmType)
+            self.player2 = pl.Computer(
+                self._dbm.createEmptyStatsTable("Computer"), self._computerAlgorithmType
+            )
         elif self._mode == qtui.gameModes.MULTIPLAYER:
-            player1 = pl.GUI("Player 1")
-            player2 = pl.GUI("Player 2")
+            ######################################
+            # TODO: SECOND PLAYER NEEDS TO LOGIN #
+            ######################################
+            raise NotImplementedError()
         elif self._mode == qtui.gameModes.TIMED:
-            player1 = pl.GUI("Player 1", popups=False)
-            player2 = pl.Computer("Computer", self._computerAlgorithmType)
+            self.player1.setPopups(False)
+            self.player2 = pl.Computer(
+                self._dbm.createEmptyStatsTable("Computer"), self._computerAlgorithmType
+            )
             length = 4
             numGuesses = 6
             duplicatesAllowed = True
@@ -213,56 +242,68 @@ class GUI(UI):
         else:
             raise ValueError("Invalid mode")
         game = Game(
-            player1=player1,
-            player2=player2,
+            player1=self.player1,
+            player2=self.player2,
             length=length,
             numGuesses=numGuesses,
             numRounds=numRounds,
             duplicatesAllowed=duplicatesAllowed,
             colourNum=colourNum,
         )
-        self.startGame(game, timed)
         self.showWelcomePage()
+        self.startGame(game, timed)
 
     def startGame(self, game, timed: bool = False):
         """
         Starts the game
         """
         self.mainWindow.hide()
+        p1 = game.getPlayer1()
+        p2 = game.getPlayer2()
+        if type(p1) == pl.GUI:
+            p1.show()
+        if type(p2) == pl.GUI:
+            p2.show()
         thread = ResultThread(target=game.run)
         thread.daemon = True
-        if timed:
-            # if timed mode is enabled, start a timer
-            self.timedModeTimer = QTimer()
-            self.timedModeTimer.timeout.connect(
-                lambda gameThread=thread: self.ifTimedGameOver(gameThread)
-            )
-            self.timedModeTimer.start(1000)
+        self.timer = QTimer()
+        self.timer.timeout.connect(
+            lambda gameThread=thread, timed=timed: self.gameOver(gameThread, timed)
+        )
         thread.start()
         self.timer.start(1000)
 
-    def ifTimedGameOver(self, gameThread):
+    def gameOver(self, gameThread, timed: bool = False):
+        """
+        Checks if the game thread is still running.
+        If not, then it tidies up.
+        Called with a timer on repeat.
+        """
         if not gameThread.is_alive():
-            self.timedModeTimer.stop()
-            timeTaken, won = gameThread.value
-            if won:
-                msg = f"You took {timeTaken} seconds to win!"
-            else:
-                msg = "You lost!"
-            msgBox = qtw.QMessageBox()
-            msgBox.setWindowTitle("Timed Game Over")
-            msgBox.setText(msg)
-            msgBox.setIcon(qtw.QMessageBox.Icon.Information)
-            msgBox.exec()
-
-    def checkIfOnlyThread(self):
-        """
-        Checks if there are any other threads running.
-        If there are not, then show the main window and stop the timer
-        """
-        if threading.active_count() == 1:
-            self.mainWindow.show()
             self.timer.stop()
+            self.mainWindow.show()
+            if not gameThread.value:
+                raise RuntimeError(
+                    "Game thread returned None. Probably means the game crashed."
+                )
+            timeTaken, won = gameThread.value
+            if timed:
+                self.timedModeOver(timeTaken, won)
+            if type(self.player1) == pl.GUI:
+                self._dbm.saveStatsTable(self.player1.getStats())
+            if type(self.player2) == pl.GUI:
+                self._dbm.saveStatsTable(self.player2.getStats())
+
+    def timedModeOver(self, timeTaken, won):
+        if won:
+            msg = f"You took {timeTaken} seconds to win!"
+        else:
+            msg = "You lost!"
+        msgBox = qtw.QMessageBox()
+        msgBox.setWindowTitle("Timed Game Over")
+        msgBox.setText(msg)
+        msgBox.setIcon(qtw.QMessageBox.Icon.Information)
+        msgBox.exec()
 
 
 class Terminal(UI):
