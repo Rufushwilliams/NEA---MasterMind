@@ -165,6 +165,13 @@ class Game:
             self.__player1.displayRoundNumber(roundNumber)
             self.__player2.displayRoundNumber(roundNumber)
 
+    def updatePlayerStats(self, timePlayed: float = None):
+        """
+        Updates the players' stats
+        """
+        self.__player1.updateStats(self.__winner, self.__numRounds, timePlayed)
+        self.__player2.updateStats(self.__winner, self.__numRounds, timePlayed)
+
     def run(self):
         """
         Runs the game and returns a tuple of the time taken to run and if player1 won
@@ -182,4 +189,6 @@ class Game:
             self.__winner = None
         self.displayWinner()
         endTime = time()
-        return (endTime - startTime, self.__winner == self.__player1)
+        gameTime = endTime - startTime
+        self.updatePlayerStats(gameTime)
+        return (gameTime, self.__winner == self.__player1)

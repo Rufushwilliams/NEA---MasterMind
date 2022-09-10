@@ -20,6 +20,23 @@ class Player(ABC):
     def getUsername(self) -> str:
         return self._stats.username
 
+    def getStats(self) -> Statistics:
+        return self._stats
+
+    def updateStats(self, winner: Player | None, roundNumber: int, timePlayed: float):
+        """
+        Updates the players statistics
+        """
+        if winner is None:
+            self._stats.draws += 1
+        elif winner == self:
+            self._stats.wins += 1
+        else:
+            self._stats.losses += 1
+        self._stats.totalGames += 1
+        self._stats.roundsPlayed += roundNumber
+        self._stats.timePlayed += timePlayed
+
     @abstractmethod
     def getMove(self, board: Board) -> list[int]:
         """

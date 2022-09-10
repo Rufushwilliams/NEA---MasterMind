@@ -439,6 +439,7 @@ class Terminal(UI):
                     self._colourNum,
                 )
                 game.run()
+                self._dbm.saveStatsTable(player1.getStats())
                 continue
             elif choice == "2":
                 print("You have chosen to play against another human")
@@ -454,6 +455,8 @@ class Terminal(UI):
                     self._colourNum,
                 )
                 game.run()
+                self._dbm.saveStatsTable(player1.getStats())
+                self._dbm.saveStatsTable(player2.getStats())
                 continue
             elif choice == "3":
                 print("You have chosen to play timed mode")
@@ -469,6 +472,7 @@ class Terminal(UI):
                     print(f"You have finished in {timeTaken} seconds")
                 else:
                     print("You have lost")
+                self._dbm.saveStatsTable(player1.getStats())
                 continue
             elif choice == "4":
                 self.setup()
