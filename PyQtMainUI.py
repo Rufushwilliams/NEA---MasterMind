@@ -8,12 +8,17 @@ from PyQt6 import QtCore as qtc
 class LoginPage(qtw.QWidget):
     def __init__(self):
         super().__init__()
+        self.usernameText = ""
+        self.passwordText = ""
         self.setLayout(qtw.QVBoxLayout())
         usernameEnter = qtw.QLineEdit()
         usernameEnter.setFixedWidth(250)
         usernameEnter.setFixedHeight(50)
         usernameEnter.setPlaceholderText("Username")
         usernameEnter.setFont(qtg.QFont("Times", 20))
+        usernameEnter.textChanged.connect(
+            lambda t=usernameEnter.text(): self.updateUsernameText(t)
+        )
         self.layout().addWidget(usernameEnter)
         passwordEnter = qtw.QLineEdit()
         passwordEnter.setFixedWidth(250)
@@ -21,12 +26,27 @@ class LoginPage(qtw.QWidget):
         passwordEnter.setPlaceholderText("Password")
         passwordEnter.setEchoMode(qtw.QLineEdit.EchoMode.Password)
         passwordEnter.setFont(qtg.QFont("Times", 20))
+        passwordEnter.textChanged.connect(
+            lambda t=passwordEnter.text(): self.updatePasswordText(t)
+        )
         self.layout().addWidget(passwordEnter)
         self.loginButton = qtw.QPushButton("Login")
         self.loginButton.setFixedWidth(250)
         self.loginButton.setFixedHeight(50)
         self.loginButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.loginButton)
+
+    def updateUsernameText(self, text: str):
+        self.usernameText = text
+
+    def getUsername(self) -> str:
+        return self.usernameText
+
+    def getPassword(self) -> str:
+        return self.passwordText
+
+    def updatePasswordText(self, text: str):
+        self.passwordText = text
 
     def bindLoginButton(self, func: Callable):
         self.loginButton.clicked.connect(func)
@@ -112,7 +132,7 @@ class ModePage(qtw.QWidget):
 
     def bindMultiplayerButton(self, func: Callable):
         self.multiplayerButton.clicked.connect(func)
-    
+
     def bindTimedButton(self, func: Callable):
         self.timedButton.clicked.connect(func)
 

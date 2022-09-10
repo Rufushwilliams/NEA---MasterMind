@@ -4,6 +4,7 @@ from random import choice, sample
 from PyQt6 import QtWidgets as qtw
 from PyQt6 import QtCore as qtc
 from PyQtPlayerUI import gameWidget, SignalsGUI, loopSpinner
+from DataBaseManager import Statistics
 from Board import Board
 import Algorithms as alg
 
@@ -13,11 +14,11 @@ class Player(ABC):
     Basic player class
     """
 
-    def __init__(self, playerName: str):
-        self._playerName = playerName.capitalize()
+    def __init__(self, stats: Statistics):
+        self._stats = stats
 
-    def getPlayerName(self) -> str:
-        return self._playerName
+    def getUsername(self) -> str:
+        return self._stats.username
 
     @abstractmethod
     def getMove(self, board: Board) -> list[int]:
@@ -67,8 +68,8 @@ class Computer(Player):
     Computer class that inherits from the Player class
     """
 
-    def __init__(self, playerName: str, algorithmType: alg.Algorithm):
-        super().__init__(playerName)
+    def __init__(self, stats: Statistics, algorithmType: alg.Algorithm):
+        super().__init__(stats)
         self.__board = None
         self.__algorithmType = algorithmType
         self.__algorithm = None
@@ -140,8 +141,8 @@ class Human(Player, ABC):
     Human class that inherits from the Player class
     """
 
-    def __init__(self, playerName: str):
-        super().__init__(playerName)
+    def __init__(self, stats: Statistics):
+        super().__init__(stats)
         pass
 
 
@@ -150,8 +151,8 @@ class LocalHuman(Human, ABC):
     Local human class that inherits from the Human class
     """
 
-    def __init__(self, playerName: str):
-        super().__init__(playerName)
+    def __init__(self, stats: Statistics):
+        super().__init__(stats)
         pass
 
 
@@ -161,8 +162,8 @@ class Terminal(LocalHuman):
     This class is used as the LocalHuman class when displaying the game to the terminal
     """
 
-    def __init__(self, playerName: str):
-        super().__init__(playerName)
+    def __init__(self, stats: Statistics):
+        super().__init__(stats)
         pass
 
     def getMove(self, board: Board) -> list[int]:
@@ -199,7 +200,7 @@ class Terminal(LocalHuman):
         if colourNum >= 10:
             example = " ".join(str(i) for i in example)
             print(
-                f"{self._playerName}, please enter your {message} of {length} numbers long"
+                f"{self.getUsername()}, please enter your {message} of {length} numbers long"
             )
             print(
                 f"You may include the numbers 1 through {colourNum}{x}, seperated by spaces"
@@ -219,7 +220,7 @@ class Terminal(LocalHuman):
         else:
             example = "".join(str(i) for i in example)
             print(
-                f"{self._playerName}, please enter your {message} of {length} numbers long"
+                f"{self.getUsername()}, please enter your {message} of {length} numbers long"
             )
             print(
                 f"You may include the numbers 1 through {colourNum}{x}, with no seperation"
@@ -250,7 +251,7 @@ class Terminal(LocalHuman):
         """
         Displays the winner of the round to the ui.
         """
-        print(f"{winner.getPlayerName()} wins this round!")
+        print(f"{winner.getUsername()} wins this round!")
 
     def displayWinner(self, winner: Player | None):
         """
@@ -259,7 +260,7 @@ class Terminal(LocalHuman):
         if winner is None:
             print("It's a draw!")
         else:
-            print(f"Congrats!! The winner was {winner.getPlayerName()}")
+            print(f"Congrats!! The winner was {winner.getUsername()}")
 
     def displayRoundNumber(self, roundNumber: int):
         """
@@ -276,8 +277,8 @@ class GUI(Player):
     This class is used as the LocalHuman class when displaying the game with a GUI
     """
 
-    def __init__(self, name: str, popups: bool = True):
-        super().__init__(name)
+    def __init__(self, stats: Statistics, popups: bool = True):
+        super().__init__(stats)
         self.__popups = popups
         self.__colourMapping = {0: "#000000"}
         self.__roundNum = None
@@ -418,7 +419,7 @@ class GUI(Player):
         """
         self.initRound()
         if self.__popups:
-            message = self.__getMessage(f"{winner.getPlayerName()} wins this round!")
+            message = self.__getMessage(f"{winner.getUsername()} wins this round!")
             msgBox = qtw.QMessageBox()
             msgBox.setWindowTitle("Round Winner")
             msgBox.setText(message)
@@ -443,7 +444,7 @@ class GUI(Player):
         self.initRound()
         if self.__popups:
             message = (
-                f"{winner.getPlayerName()} wins the game!" if winner else "It's a draw!"
+                f"{winner.getUsername()} wins the game!" if winner else "It's a draw!"
             )
             msgBox = qtw.QMessageBox()
             msgBox.setWindowTitle("Round Winner")
@@ -475,7 +476,7 @@ class GUI(Player):
         Initialises the GUI
         """
         self.__mainWindow = qtw.QMainWindow()
-        self.__mainWindow.setWindowTitle(f"Mastermind: {self._playerName}")
+        self.__mainWindow.setWindowTitle(f"Mastermind: {self.getUsername()}")
         self.__mainWidget = qtw.QWidget()
         self.__mainWidget.setFixedSize(qtc.QSize(800, 600))
         self.__mainWindow.setCentralWidget(self.__mainWidget)
@@ -487,6 +488,6 @@ class NetworkingHuman(Human):
     Networking human class that inherits from the Human class
     """
 
-    def __init__(self, playerName: str):
-        super().__init__(playerName)
+    def __init__(self, stats: Statistics):
+        super().__init__(stats)
         pass

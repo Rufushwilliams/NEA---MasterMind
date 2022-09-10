@@ -50,12 +50,11 @@ class dataBaseManager:
             "SELECT passwordHash FROM users WHERE username = ?", (username,)
         )
         # get the password hash from the database
-        hashedPasswordFromDB = self.cur.fetchone()[0]
-        # check if the password hashes match
-        if hashedPassword == hashedPasswordFromDB:
+        result = self.cur.fetchone()
+        if result and result[0] == hashedPassword:
+            # if the password hashes match, return True
             return True
-        else:
-            return False
+        return False
 
     def createStatsTable(self, username: str) -> Statistics:
         """
@@ -68,6 +67,27 @@ class dataBaseManager:
         stats = Statistics(*self.cur.fetchone())
         return stats
 
+    def createEmptyStatsTable(self, username: str) -> Statistics:
+        """
+        Creates a new empty stats table
+        """
+        return Statistics(username)
+
+    def saveStatsTable(self, stats: Statistics):
+        self.cur.execute(
+            """UPDATE users SET wins = ?, losses = ?, draws = ?, totalGames = ?, roundsPlayed = ?, timePlayed = ? WHERE username = ?""",
+            (
+                stats.wins,
+                stats.losses,
+                stats.draws,
+                stats.totalGames,
+                stats.roundsPlayed,
+                stats.timePlayed,
+                stats.username,
+            ),
+        )
+        self.conn.commit()
+
     def __del__(self):
         self.conn.close()
 
@@ -79,16 +99,16 @@ class Statistics:
     """
 
     username: str
-    wins: int
-    losses: int
-    draws: int
-    totalGames: int
-    roundsPlayed: int
-    timePlayed: float
+    wins: int = 0
+    losses: int = 0
+    draws: int = 0
+    totalGames: int = 0
+    roundsPlayed: int = 0
+    timePlayed: float = 0.0
 
 
 def main():
-    db = "test.db"
+    db = "users.db"
     dbm = dataBaseManager(db)
     x = dbm.register("test", "test123")
     if x:
@@ -101,8 +121,19 @@ def main():
     else:
         print("Username already taken")
 
-    y = dbm.createStatsTable("test")
-    print(y)
+    x = dbm.login("test2", "test123")
+    if x:
+        print("Logged in")
+    else:
+        print("Incorrect username or password")
+
+    # y = dbm.createStatsTable("test")
+    # print(y)
+    # y.totalGames += 1
+    # y.wins += 1
+    # print(y)
+    # dbm.saveStatsTable(y)
+
     # choice = input("Register or Login? (1/2): ")
     # if choice == "1":
     #     x = dbm.register("test", "test")

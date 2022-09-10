@@ -4,6 +4,7 @@ import threading
 from PyQt6 import QtWidgets as qtw
 from PyQt6.QtCore import QTimer
 import PyQtMainUI as qtui
+from DataBaseManager import dataBaseManager
 from Game import Game
 import Algorithms as alg
 import Player as pl
@@ -13,6 +14,7 @@ class ResultThread(threading.Thread):
     """
     A thread that saves the result of the function it runs in thread.value
     """
+
     def __init__(self, *args, **kwargs):
         threading.Thread.__init__(self, *args, **kwargs)
         self.value = None
@@ -32,6 +34,8 @@ class UI(ABC):
         3: alg.Knuths,
     }
 
+    DATABASE = "users.db"
+
     def __init__(
         self,
         length: int = 4,
@@ -47,6 +51,7 @@ class UI(ABC):
         self._duplicatesAllowed = duplicatesAllowed
         self._colourNum = colourNum
         self._computerAlgorithmType = computerAlgorithmType
+        self._dbm = dataBaseManager(self.DATABASE)
 
     @abstractmethod
     def run(self):
@@ -120,7 +125,11 @@ class GUI(UI):
         ####################################
         # TODO: ADD FUNCTIONALITY TO LOGIN #
         ####################################
-        self.loginPage.bindLoginButton(self.showWelcomePage)
+        self.loginPage.bindLoginButton(
+            lambda e: self.tryLogin(
+                self.loginPage.getUsername(), self.loginPage.getPassword()
+            )
+        )
         self.welcomePage.bindRulesButton(self.showRulesPage)
         self.welcomePage.bindStartButton(self.showModePage)
         self.rulesPage.bindBackButton(self.showWelcomePage)
@@ -225,7 +234,9 @@ class GUI(UI):
         if timed:
             # if timed mode is enabled, start a timer
             self.timedModeTimer = QTimer()
-            self.timedModeTimer.timeout.connect(lambda gameThread=thread: self.ifTimedGameOver(gameThread))
+            self.timedModeTimer.timeout.connect(
+                lambda gameThread=thread: self.ifTimedGameOver(gameThread)
+            )
             self.timedModeTimer.start(1000)
         thread.start()
         self.timer.start(1000)
@@ -346,6 +357,57 @@ class Terminal(UI):
         print("Game setup complete")
         print("-------------------------------------------------------")
 
+    def loginUser(self) -> pl.Player:
+        """
+        Asks the user to login and returns the player object for the user.
+        """
+        print("-------------------------------------------------------")
+        print("Please login")
+        print("-------------------------------------------------------")
+        while True:
+            username = input("Enter your username: ")
+            if username:
+                password = input("Enter your password: ")
+                if self._dbm.login(username, password):
+                    print("Login successful")
+                    break
+            print("Invalid username or password")
+        stats = self._dbm.createStatsTable(username)
+        return pl.Terminal(stats)
+
+    def registerUser(self) -> pl.Player:
+        """
+        Registers a new user, and returns the player object for the user.
+        """
+        print("-------------------------------------------------------")
+        print("Please register")
+        print("-------------------------------------------------------")
+        while True:
+            username = input("Enter your username: ")
+            password = input("Enter your password: ")
+            if username and password and self._dbm.register(username, password):
+                print("Registration successful")
+                break
+            print("Registration failed")
+        stats = self._dbm.createStatsTable(username)
+        return pl.Terminal(stats)
+
+    def getPlayer(self, msg: str = None) -> pl.Player:
+        """
+        Asks the user if they want to login or register, and returns the player object for the user.
+        """
+        print("-------------------------------------------------------")
+        if msg:
+            print(msg)
+        print("Do you want to login or register?")
+        while True:
+            choice = input("Enter l to login or r to register: ")
+            if choice.lower() == "l":
+                return self.loginUser()
+            elif choice.lower() == "r":
+                return self.registerUser()
+            print("Please enter l or r")
+
     def run(self):
         """
         Runs the UI
@@ -362,9 +424,11 @@ class Terminal(UI):
             choice = input("Enter your choice: ")
             if choice == "1":
                 print("You have chosen to play against a computer")
-                name = input("Please enter your name: ")
-                player1 = pl.Terminal(name)
-                player2 = pl.Computer("Computer", self._computerAlgorithmType)
+                player1 = self.getPlayer("Hello Player 1!")
+                player2 = pl.Computer(
+                    self._dbm.createEmptyStatsTable("Computer"),
+                    self._computerAlgorithmType,
+                )
                 game = Game(
                     player1,
                     player2,
@@ -378,10 +442,8 @@ class Terminal(UI):
                 continue
             elif choice == "2":
                 print("You have chosen to play against another human")
-                name = input("Please enter the name of player 1: ")
-                player1 = pl.Terminal(name)
-                name = input("Please enter the name of player 2: ")
-                player2 = pl.Terminal(name)
+                player1 = self.getPlayer("Hello Player 1!")
+                player2 = self.getPlayer("Hello Player 2!")
                 game = Game(
                     player1,
                     player2,
@@ -395,9 +457,11 @@ class Terminal(UI):
                 continue
             elif choice == "3":
                 print("You have chosen to play timed mode")
-                name = input("Please enter your name: ")
-                player1 = pl.Terminal(name)
-                player2 = pl.Computer("Computer", self._computerAlgorithmType)
+                player1 = self.getPlayer("Hello Player 1!")
+                player2 = pl.Computer(
+                    self._dbm.createEmptyStatsTable("Computer"),
+                    self._computerAlgorithmType,
+                )
                 game = Game(player1, player2, 4, 6, 1, True, 6)
                 timeTaken, win = game.run()
                 print("-------------------------------------------------------")

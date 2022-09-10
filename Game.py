@@ -183,4 +183,3 @@ class Game:
         self.displayWinner()
         endTime = time()
         return (endTime - startTime, self.__winner == self.__player1)
-
