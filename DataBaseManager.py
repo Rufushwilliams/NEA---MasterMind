@@ -84,7 +84,7 @@ class dataBaseManager:
         """
         with openDB(self.db) as cur:
             cur.execute(
-                "SELECT wins, losses, draws, totalGames, roundsPlayed, timePlayed FROM users WHERE username = ?",
+                "SELECT username, wins, losses, draws, totalGames, roundsPlayed, timePlayed FROM users WHERE username = ?",
                 (username,),
             )
             stats = cur.fetchone()

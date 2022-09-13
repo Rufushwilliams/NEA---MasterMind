@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Callable, Type
 from abc import ABC, abstractmethod
 import threading
 from PyQt6 import QtWidgets as qtw
@@ -83,6 +83,8 @@ class GUI(UI):
             colourNum,
             computerAlgorithmType,
         )
+        self.p1Username = ""
+        self.p2loggedin = False
         self.initUI()
 
     def run(self):
@@ -119,36 +121,71 @@ class GUI(UI):
         self.mainWidget.addWidget(self.modePage)
         self.mainWidget.addWidget(self.readyPage)
         self.mainWidget.addWidget(self.advancedSetupPage)
+
         # Setup the buttons on the pages
+        self.__setupLoginPage(self.showWelcomePage)
+        self.welcomePage.bindRulesButton(self.showRulesPage)
+        self.welcomePage.bindStartButton(self.showModePage)
+        self.rulesPage.bindBackButton(self.showWelcomePage)
+        self.__setupModePage()
+        self.readyPage.bindStartButton(self.initGame)
+        self.readyPage.bindAdvancedSetupButton(self.showAdvancedSetupPage)
+        self.readyPage.bindBackButton(self.showModePage)
+        self.advancedSetupPage.bindConfirmButton(
+            lambda: self.setValuesFromAdvanced(), lambda: self.showReadyPage()
+        )
+
+    def __setupLoginPage(
+        self,
+        returnCommand: Callable,
+        player1: bool = True,
+        backButton: bool = False,
+        backButtonCommand: Callable = None,
+    ):
         self.loginPage.bindLoginButton(
             lambda e: self.tryLogin(
-                self.loginPage.getUsername(), self.loginPage.getPassword()
+                self.loginPage.getUsername(),
+                self.loginPage.getPassword(),
+                returnCommand,
+                player1,
             )
         )
         self.loginPage.bindRegisterButton(
             lambda e: self.tryRegister(
-                self.loginPage.getUsername(), self.loginPage.getPassword()
+                self.loginPage.getUsername(),
+                self.loginPage.getPassword(),
+                returnCommand,
+                player1,
             )
         )
-        self.welcomePage.bindRulesButton(self.showRulesPage)
-        self.welcomePage.bindStartButton(self.showModePage)
-        self.rulesPage.bindBackButton(self.showWelcomePage)
+        if backButton and backButtonCommand:
+            self.loginPage.bindBackButton(backButtonCommand)
+            self.loginPage.showBackButton()
+        else:
+            self.loginPage.hideBackButton()
+
+    def __setupModePage(self):
         self.modePage.bindSingleplayerButton(
             lambda: self.setMode(qtui.gameModes.SINGLEPLAYER)
         )
         self.modePage.bindMultiplayerButton(
             lambda: self.setMode(qtui.gameModes.MULTIPLAYER)
+            if self.p2loggedin
+            else (
+                self.setMode(qtui.gameModes.MULTIPLAYER, show=False),
+                self.__setupLoginPage(
+                    self.showReadyPage,
+                    player1=False,
+                    backButton=True,
+                    backButtonCommand=self.showModePage,
+                ),
+                self.showLoginPage(),
+            )
         )
         self.modePage.bindTimedButton(
             lambda: self.setMode(qtui.gameModes.TIMED, start=True)
         )
         self.modePage.bindBackButton(self.showWelcomePage)
-        self.readyPage.bindStartButton(self.initGame)
-        self.readyPage.bindAdvancedSetupButton(self.showAdvancedSetupPage)
-        self.readyPage.bindBackButton(self.showModePage)
-        self.advancedSetupPage.bindConfirmButton(
-            lambda: [self.setValuesFromAdvanced(), self.showReadyPage()]
-        )
 
     def showLoginPage(self):
         self.mainWidget.setCurrentWidget(self.loginPage)
@@ -168,11 +205,11 @@ class GUI(UI):
     def showAdvancedSetupPage(self):
         self.mainWidget.setCurrentWidget(self.advancedSetupPage)
 
-    def setMode(self, mode: qtui.gameModes, start: bool = False):
+    def setMode(self, mode: qtui.gameModes, start: bool = False, show: bool = True):
         self._mode = mode
         if start:
             self.initGame()
-        else:
+        elif show:
             self.showReadyPage()
 
     def setValuesFromAdvanced(self):
@@ -184,19 +221,35 @@ class GUI(UI):
         self._numRounds = values["numRounds"]
         self._computerAlgorithmType = values["computerAlgorithmType"]
 
-    def tryLogin(self, username: str, password: str, player1: bool = True):
-        if username and self._dbm.login(username, password):
+    def tryLogin(  # TODO: Add a way to logout
+        self,
+        username: str,
+        password: str,
+        returnCommand: Callable,
+        player1: bool = True,
+    ):
+        if username == self.p1Username:
+            self.loginPage.showLoginError()
+        elif username and self._dbm.login(username, password):
             stats = self._dbm.createStatsTable(username)
             if player1:
+                self.p1Username = username
                 self.player1 = pl.GUI(stats)
             else:
                 self.player2 = pl.GUI(stats)
+                self.p2loggedin = True
             self.loginPage.showLoginSuccess()
-            self.showWelcomePage()
+            returnCommand()
         else:
             self.loginPage.showLoginError()
 
-    def tryRegister(self, username: str, password: str, player1: bool = True):
+    def tryRegister(
+        self,
+        username: str,
+        password: str,
+        returnCommand: Callable,
+        player1: bool = True,
+    ):
         if username and password and self._dbm.register(username, password):
             stats = self._dbm.createStatsTable(username)
             if player1:
@@ -204,7 +257,7 @@ class GUI(UI):
             else:
                 self.player2 = pl.GUI(stats)
             self.loginPage.showRegisterSuccess()
-            self.showWelcomePage()
+            returnCommand()
         else:
             self.loginPage.showRegisterError()
 
@@ -224,10 +277,7 @@ class GUI(UI):
                 self._dbm.createEmptyStatsTable("Computer"), self._computerAlgorithmType
             )
         elif self._mode == qtui.gameModes.MULTIPLAYER:
-            ######################################
-            # TODO: SECOND PLAYER NEEDS TO LOGIN #
-            ######################################
-            raise NotImplementedError()
+            pass
         elif self._mode == qtui.gameModes.TIMED:
             self.player1.setPopups(False)
             self.player2 = pl.Computer(

@@ -11,25 +11,25 @@ class LoginPage(qtw.QWidget):
         self.usernameText = ""
         self.passwordText = ""
         self.setLayout(qtw.QVBoxLayout())
-        usernameEnter = qtw.QLineEdit()
-        usernameEnter.setFixedWidth(250)
-        usernameEnter.setFixedHeight(50)
-        usernameEnter.setPlaceholderText("Username")
-        usernameEnter.setFont(qtg.QFont("Times", 20))
-        usernameEnter.textChanged.connect(
-            lambda t=usernameEnter.text(): self.updateUsernameText(t)
+        self.usernameEnter = qtw.QLineEdit()
+        self.usernameEnter.setFixedWidth(250)
+        self.usernameEnter.setFixedHeight(50)
+        self.usernameEnter.setPlaceholderText("Username")
+        self.usernameEnter.setFont(qtg.QFont("Times", 20))
+        self.usernameEnter.textChanged.connect(
+            lambda t=self.usernameEnter.text(): self.updateUsernameText(t)
         )
-        self.layout().addWidget(usernameEnter)
-        passwordEnter = qtw.QLineEdit()
-        passwordEnter.setFixedWidth(250)
-        passwordEnter.setFixedHeight(50)
-        passwordEnter.setPlaceholderText("Password")
-        passwordEnter.setEchoMode(qtw.QLineEdit.EchoMode.Password)
-        passwordEnter.setFont(qtg.QFont("Times", 20))
-        passwordEnter.textChanged.connect(
-            lambda t=passwordEnter.text(): self.updatePasswordText(t)
+        self.layout().addWidget(self.usernameEnter)
+        self.passwordEnter = qtw.QLineEdit()
+        self.passwordEnter.setFixedWidth(250)
+        self.passwordEnter.setFixedHeight(50)
+        self.passwordEnter.setPlaceholderText("Password")
+        self.passwordEnter.setEchoMode(qtw.QLineEdit.EchoMode.Password)
+        self.passwordEnter.setFont(qtg.QFont("Times", 20))
+        self.passwordEnter.textChanged.connect(
+            lambda t=self.passwordEnter.text(): self.updatePasswordText(t)
         )
-        self.layout().addWidget(passwordEnter)
+        self.layout().addWidget(self.passwordEnter)
         self.loginButton = qtw.QPushButton("Login")
         self.loginButton.setFixedWidth(250)
         self.loginButton.setFixedHeight(50)
@@ -40,6 +40,10 @@ class LoginPage(qtw.QWidget):
         self.registerButton.setFixedHeight(50)
         self.registerButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.registerButton)
+        self.backButton = qtw.QPushButton("Back")
+        self.backButton.setFixedWidth(250)
+        self.backButton.setFixedHeight(50)
+        self.backButton.setFont(qtg.QFont("Times", 20))
 
     def showLoginError(self):
         error = qtw.QMessageBox()
@@ -47,6 +51,7 @@ class LoginPage(qtw.QWidget):
         error.setText("Incorrect username or password")
         error.setWindowTitle("Error")
         error.exec()
+        self.passwordEnter.clear()
 
     def showLoginSuccess(self):
         success = qtw.QMessageBox()
@@ -54,6 +59,8 @@ class LoginPage(qtw.QWidget):
         success.setText("Logged in!")
         success.setWindowTitle("Success")
         success.exec()
+        self.usernameEnter.clear()
+        self.passwordEnter.clear()
 
     def showRegisterError(self):
         error = qtw.QMessageBox()
@@ -61,6 +68,8 @@ class LoginPage(qtw.QWidget):
         error.setText("Username already taken")
         error.setWindowTitle("Error")
         error.exec()
+        self.usernameEnter.clear()
+        self.passwordEnter.clear()
 
     def showRegisterSuccess(self):
         success = qtw.QMessageBox()
@@ -68,6 +77,8 @@ class LoginPage(qtw.QWidget):
         success.setText("Registered!")
         success.setWindowTitle("Success")
         success.exec()
+        self.usernameEnter.clear()
+        self.passwordEnter.clear()
 
     def updateUsernameText(self, text: str):
         self.usernameText = text
@@ -78,14 +89,41 @@ class LoginPage(qtw.QWidget):
     def getPassword(self) -> str:
         return self.passwordText
 
+    def showBackButton(self):
+        self.layout().addWidget(self.backButton)
+
+    def hideBackButton(self):
+        self.layout().removeWidget(self.backButton)
+
     def updatePasswordText(self, text: str):
         self.passwordText = text
 
-    def bindLoginButton(self, func: Callable):
-        self.loginButton.clicked.connect(func)
+    def bindLoginButton(self, *args: Callable):
+        try:
+            while True:
+                self.loginButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.loginButton.clicked.connect(func)
 
-    def bindRegisterButton(self, func: Callable):
-        self.registerButton.clicked.connect(func)
+    def bindRegisterButton(self, *args: Callable):
+        try:
+            while True:
+                self.registerButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.registerButton.clicked.connect(func)
+
+    def bindBackButton(self, *args: Callable):
+        try:
+            while True:
+                self.backButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.backButton.clicked.connect(func)
 
 
 class WelcomePage(qtw.QWidget):
@@ -106,11 +144,23 @@ class WelcomePage(qtw.QWidget):
         self.startButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.startButton)
 
-    def bindRulesButton(self, func: Callable):
-        self.rulesButton.clicked.connect(func)
+    def bindRulesButton(self, *args: Callable):
+        try:
+            while True:
+                self.rulesButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.rulesButton.clicked.connect(func)
 
-    def bindStartButton(self, func: Callable):
-        self.startButton.clicked.connect(func)
+    def bindStartButton(self, *args: Callable):
+        try:
+            while True:
+                self.startButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.startButton.clicked.connect(func)
 
 
 class RulesPage(qtw.QWidget):
@@ -131,8 +181,14 @@ class RulesPage(qtw.QWidget):
         self.backButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.backButton)
 
-    def bindBackButton(self, func: Callable):
-        self.backButton.clicked.connect(func)
+    def bindBackButton(self, *args: Callable):
+        try:
+            while True:
+                self.backButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.backButton.clicked.connect(func)
 
 
 class ModePage(qtw.QWidget):
@@ -163,17 +219,41 @@ class ModePage(qtw.QWidget):
         self.backButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.backButton)
 
-    def bindSingleplayerButton(self, func: Callable):
-        self.singleplayerButton.clicked.connect(func)
+    def bindSingleplayerButton(self, *args: Callable):
+        try:
+            while True:
+                self.singleplayerButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.singleplayerButton.clicked.connect(func)
 
-    def bindMultiplayerButton(self, func: Callable):
-        self.multiplayerButton.clicked.connect(func)
+    def bindMultiplayerButton(self, *args: Callable):
+        try:
+            while True:
+                self.multiplayerButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.multiplayerButton.clicked.connect(func)
 
-    def bindTimedButton(self, func: Callable):
-        self.timedButton.clicked.connect(func)
+    def bindTimedButton(self, *args: Callable):
+        try:
+            while True:
+                self.timedButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.timedButton.clicked.connect(func)
 
-    def bindBackButton(self, func: Callable):
-        self.backButton.clicked.connect(func)
+    def bindBackButton(self, *args: Callable):
+        try:
+            while True:
+                self.backButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.backButton.clicked.connect(func)
 
 
 class ReadyPage(qtw.QWidget):
@@ -196,14 +276,32 @@ class ReadyPage(qtw.QWidget):
         self.backButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.backButton)
 
-    def bindStartButton(self, func: Callable):
-        self.startButton.clicked.connect(func)
+    def bindStartButton(self, *args: Callable):
+        try:
+            while True:
+                self.startButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.startButton.clicked.connect(func)
 
-    def bindAdvancedSetupButton(self, func: Callable):
-        self.advancedSetupButton.clicked.connect(func)
+    def bindAdvancedSetupButton(self, *args: Callable):
+        try:
+            while True:
+                self.advancedSetupButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.advancedSetupButton.clicked.connect(func)
 
-    def bindBackButton(self, func: Callable):
-        self.backButton.clicked.connect(func)
+    def bindBackButton(self, *args: Callable):
+        try:
+            while True:
+                self.backButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.backButton.clicked.connect(func)
 
 
 class sliderOptionWidget(qtw.QWidget):
@@ -361,8 +459,14 @@ class AdvancedSetupPage(qtw.QWidget):
             values[option.variable] = option.getValue()
         return values
 
-    def bindConfirmButton(self, func: Callable):
-        self.confirmButton.clicked.connect(func)
+    def bindConfirmButton(self, *args: Callable):
+        try:
+            while True:
+                self.confirmButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.confirmButton.clicked.connect(func)
 
 
 class gameModes(Enum):
