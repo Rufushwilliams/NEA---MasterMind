@@ -56,11 +56,26 @@ class Game:
 
     def getPlayer2(self) -> Player:
         return self.__player2
+    
+    def getLengthOfCode(self) -> int:
+        return self.__length
+    
+    def getNumGuesses(self) -> int:
+        return self.__numGuesses
+
+    def getNumRounds(self) -> int:
+        return self.__numRounds
+    
+    def getColourNum(self) -> int:
+        return self.__colourNum
+    
+    def getDuplicatesAllowed(self) -> bool:
+        return self.__duplicatesAllowed
 
     def getBoard(self) -> Board:
         return self.__board
 
-    def getWinner(self) -> Player:
+    def getWinner(self) -> Player | None:
         return self.__winner
 
     def switchPlayer(self):
@@ -195,6 +210,6 @@ class Game:
             self.__winner = None
         self.displayWinner()
         endTime = time()
-        gameTime = endTime - startTime
-        self.updatePlayerStats(gameTime)
-        return (gameTime, self.__winner == self.__player1)
+        self.__gameTime = endTime - startTime
+        self.updatePlayerStats(self.__gameTime)
+        return (self.__gameTime, self.__winner == self.__player1)

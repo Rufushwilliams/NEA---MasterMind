@@ -2,6 +2,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from dataclasses import dataclass
 from hashlib import sha256
+from time import strftime
 import sqlite3
 
 
@@ -26,19 +27,35 @@ class dataBaseManager:
 
     def __init__(self, db: str):
         self.db = db
-        # create the database if it doesn't exist
+        # create the tables if they don't exist
         with openDB(self.db) as cur:
             cur.execute(
                 """
             CREATE TABLE IF NOT EXISTS users (
-                username text PRIMARY KEY,
-                passwordHash text,
-                wins int DEFAULT 0,
-                losses int DEFAULT 0,
-                draws int DEFAULT 0,
-                totalGames int DEFAULT 0,
-                roundsPlayed int DEFAULT 0,
-                timePlayed float DEFAULT 0
+                username TEXT PRIMARY KEY,
+                passwordHash TEXT,
+                wins INTEGER DEFAULT 0,
+                losses INTEGER DEFAULT 0,
+                draws INTEGER DEFAULT 0,
+                totalGames INTEGER DEFAULT 0,
+                roundsPlayed INTEGER DEFAULT 0,
+                timePlayed REAL DEFAULT 0
+                )"""
+            )
+            cur.execute(
+                """
+            CREATE TABLE IF NOT EXISTS pastGames (
+                gameID INTEGER PRIMARY KEY,
+                player1 TEXT,
+                player2 TEXT,
+                winner TEXT,
+                lengthOfCode INTEGER,
+                numGuesses INTEGER,
+                numRounds INTEGER,
+                colourNum INTEGER,
+                duplicatesAllowed INTEGER,
+                date TEXT,
+                timeTaken REAL
                 )"""
             )
 
@@ -108,6 +125,24 @@ class dataBaseManager:
                     stats.roundsPlayed,
                     stats.timePlayed,
                     stats.username,
+                ),
+            )
+    
+    def savePastGame(self, pl1Username: str, pl2Username: str, winnerUsername: str, lengthOfCode: int, numGuesses: int, numRounds: int, colourNum: int, duplicatesAllowed: bool, timeTaken: float):
+        with openDB(self.db) as cur:
+            cur.execute(
+                """INSERT INTO pastGames (player1, player2, winner, lengthOfCode, numGuesses, numRounds, colourNum, duplicatesAllowed, date, timeTaken) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    pl1Username,
+                    pl2Username,
+                    winnerUsername,
+                    lengthOfCode,
+                    numGuesses,
+                    numRounds,
+                    colourNum,
+                    duplicatesAllowed,
+                    strftime("%d/%m/%Y"),
+                    timeTaken
                 ),
             )
 
