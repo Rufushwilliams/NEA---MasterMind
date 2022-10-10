@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from random import choice, sample
 from PyQt6 import QtWidgets as qtw
 from PyQt6 import QtCore as qtc
+import socket
 from PyQtPlayerUI import gameWidget, SignalsGUI, loopSpinner
 from DataBaseManager import Statistics
 from Board import Board
@@ -153,30 +154,10 @@ class Computer(Player):
         return None
 
 
-class Human(Player, ABC):
+class Terminal(Player):
     """
-    Human class that inherits from the Player class
-    """
-
-    def __init__(self, stats: Statistics):
-        super().__init__(stats)
-        pass
-
-
-class LocalHuman(Human, ABC):
-    """
-    Local human class that inherits from the Human class
-    """
-
-    def __init__(self, stats: Statistics):
-        super().__init__(stats)
-        pass
-
-
-class Terminal(LocalHuman):
-    """
-    Terminal class that inherits from the LocalHuman class
-    This class is used as the LocalHuman class when displaying the game to the terminal
+    Terminal class that inherits from the Player class
+    This class is used as the Player class when displaying the game to the terminal
     """
 
     def __init__(self, stats: Statistics):
@@ -290,8 +271,8 @@ class Terminal(LocalHuman):
 
 class GUI(Player):
     """
-    GUI class that inherits from the LocalHuman class
-    This class is used as the LocalHuman class when displaying the game with a GUI
+    GUI class that inherits from the Player class
+    This class is used as the Player class when displaying the game with a GUI
     """
 
     def __init__(self, stats: Statistics, popups: bool = True):
@@ -505,11 +486,141 @@ class GUI(Player):
         self.__mainWindow.setCentralWidget(self.__mainWidget)
 
 
-class NetworkingHuman(Human):
+class NetworkedPlayer(Player, ABC):
     """
-    Networking human class that inherits from the Human class
+    An abstract class for a networked player
+    """
+    def __init__(self, stats: Statistics, host, port):
+        super().__init__(stats)
+        self.host = host
+        self.port = port
+        self.socket: socket.socket = None # this attribute should be set by the subclass
+
+    def createUnboundSocket(self) -> socket.socket:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(3)
+        return s
+    
+    def createServerSocket(self) -> socket.socket:
+        s = self.createUnboundSocket()
+        s.bind((self.host, self.port))
+        s.listen(1)
+        conn, addr = s.accept()
+        s.close()
+        return conn
+    
+    def createClientSocket(self) -> socket.socket:
+        s = self.createUnboundSocket()
+        s.connect((self.host, self.port))
+        return s
+
+    def send(self, msg: str):
+        """
+        Sends a message to the socket.
+        """
+        self.socket.sendall(msg.encode())
+
+    def recv(self) -> str:
+        """
+        Receives a message from the socket.
+        """
+        return self.socket.recv(1024).decode()
+
+    def close(self):
+        """
+        Closes the socket.
+        """
+        self.socket.close()
+    
+    def __del__(self):
+        self.close()
+
+
+class serverPlayer(NetworkedPlayer):
+    """
+    This class will be used to create a server which will host a game
+    It will send messages to the client asking it for input
+    It will not render anything
+    """
+    
+    def __init__(self, stats: Statistics, host, port):
+        super().__init__(stats, host, port)
+        self.socket = self.createServerSocket()
+    
+    def getMove(self, board: Board) -> list[int]:
+        """
+        Returns the players next guess.
+        """
+        self.send("getMove")
+        return self.recv()
+    
+    def getCode(self, board: Board) -> list[int]:
+        """
+        Returns the players code.
+        """
+        self.send("getCode")
+        return self.recv()
+
+    def displayBoard(self, board: Board, code: list = None):
+        """
+        Displays the board to the player.
+        """
+        msg = "displayBoard" + board.pickle() + code.pickle()
+        self.send(msg)
+    
+    def displayRoundWinner(self, winner: Player):
+        """
+        Displays the winner of the round.
+        """
+        msg = "displayRoundWinner" + winner.getUsername()
+        self.send(msg)
+
+    def displayWinner(self, winner: Player | None):
+        """
+        Displays the winner of the game.
+        """
+        msg = "displayWinner" + winner.getUsername()
+        self.send(msg)
+
+    def displayRoundNumber(self, roundNumber: int):
+        """
+        Displays the round number.
+        """
+        msg = "displayRoundNumber" + roundNumber
+        self.send(msg)	
+
+
+class clientPlayer(NetworkedPlayer):
+    """
+    This class will be used to create a client which will join a game
+    It will send data to the server when requested
+    It will render the game
     """
 
-    def __init__(self, stats: Statistics):
-        super().__init__(stats)
-        pass
+    def __init__(self, stats: Statistics, host, port):
+        super().__init__(stats, host, port)
+        self.socket = self.createClientSocket()
+
+    def mainLoop(self):
+        """
+        This is the main loop of the game
+        It will listen for messages from the server and respond accordingly
+        """
+        while True:
+            msg = self.recv()
+            if msg.startswith("getMove"):
+                move = self.getMove()
+                self.send(move)
+            elif msg.startswith("getCode"):
+                pass
+            elif msg.startswith("displayBoard"):
+                pass
+            elif msg.startswith("displayRoundWinner"):
+                pass
+            elif msg.startswith("displayWinner"):
+                pass
+            elif msg.startswith("displayRoundNumber"):
+                pass
+            else:
+                print("Unknown message: " + msg)
+                break
