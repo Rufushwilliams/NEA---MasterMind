@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from enum import Enum
 from random import choice, sample
 from PyQt6 import QtWidgets as qtw
 from PyQt6 import QtCore as qtc
@@ -486,21 +487,22 @@ class GUI(Player):
         self.__mainWindow.setCentralWidget(self.__mainWidget)
 
 
-class NetworkedPlayer(Player, ABC):
+class SocketManager(ABC):
     """
-    An abstract class for a networked player
+    An abstract class for handling sockets
     """
-    def __init__(self, stats: Statistics, host, port):
-        super().__init__(stats)
+
+    def __init__(self, host, port):
         self.host = host
         self.port = port
-        self.socket: socket.socket = None # this attribute should be set by the subclass
+        self.socket: socket.socket = None
+        # socket attribute should be set by the subclass
 
     def createUnboundSocket(self) -> socket.socket:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(3)
         return s
-    
+
     def createServerSocket(self) -> socket.socket:
         s = self.createUnboundSocket()
         s.bind((self.host, self.port))
@@ -508,7 +510,7 @@ class NetworkedPlayer(Player, ABC):
         conn, addr = s.accept()
         s.close()
         return conn
-    
+
     def createClientSocket(self) -> socket.socket:
         s = self.createUnboundSocket()
         s.connect((self.host, self.port))
@@ -520,81 +522,135 @@ class NetworkedPlayer(Player, ABC):
         """
         self.socket.sendall(msg.encode())
 
-    def recv(self) -> str:
+    def receiveData(self) -> str:
         """
         Receives a message from the socket.
         """
-        return self.socket.recv(1024).decode()
+        return self.socket.recv(2048).decode()
+
+    def decodeData(self, data: str) -> tuple[str, list]:
+        """
+        Decodes the data received from the socket.
+        Returns a tuple of the message and a list of the data.
+        """
+        msg = data.split(self.possibleMessages.DELIMITER)
+        for member in self.possibleMessages:
+            if msg[0] == member.value:
+                return member, msg[1:]
+        raise ValueError(f"Invalid message received: {msg[0]}")
 
     def close(self):
         """
         Closes the socket.
         """
         self.socket.close()
-    
+
     def __del__(self):
         self.close()
 
+    class possibleMessages(Enum):
+        """
+        An enum for possible messages by the server.
+        """
 
-class serverPlayer(NetworkedPlayer):
+        DELIMITER = "#"
+        GET_MOVE = "getMove"
+        GET_CODE = "getCode"
+        DISPLAY_BOARD = "displayBoard"
+        DISPLAY_ROUND_WINNER = "displayRoundWinner"
+        DISPLAY_WINNER = "displayWinner"
+        DISPLAY_ROUND_NUMBER = "displayRoundNumber"
+
+
+class serverPlayer(Player, SocketManager):
     """
     This class will be used to create a server which will host a game
     It will send messages to the client asking it for input
     It will not render anything
+    It will be used as a player in the game
     """
-    
+
     def __init__(self, stats: Statistics, host, port):
         super().__init__(stats, host, port)
         self.socket = self.createServerSocket()
-    
+
     def getMove(self, board: Board) -> list[int]:
         """
         Returns the players next guess.
         """
-        self.send("getMove")
-        return self.recv()
-    
+        msg = (
+            self.possibleMessages.GET_MOVE
+            + self.possibleMessages.DELIMITER
+            + board.pickle()
+        )
+        self.send(msg)
+        return self.receiveData()
+
     def getCode(self, board: Board) -> list[int]:
         """
         Returns the players code.
         """
-        self.send("getCode")
-        return self.recv()
+        msg = (
+            self.possibleMessages.GET_CODE
+            + self.possibleMessages.DELIMITER
+            + board.pickle()
+        )
+        self.send(msg)
+        return self.receiveData()
 
     def displayBoard(self, board: Board, code: list = None):
         """
         Displays the board to the player.
         """
-        msg = "displayBoard" + board.pickle() + code.pickle()
+        msg = (
+            self.possibleMessages.DISPLAY_BOARD
+            + self.possibleMessages.DELIMITER
+            + board.pickle()
+            + self.possibleMessages.DELIMITER
+            + code.pickle()
+        )
         self.send(msg)
-    
+
     def displayRoundWinner(self, winner: Player):
         """
         Displays the winner of the round.
         """
-        msg = "displayRoundWinner" + winner.getUsername()
+        msg = (
+            self.possibleMessages.DISPLAY_ROUND_WINNER
+            + self.possibleMessages.DELIMITER
+            + winner.pickle()
+        )
         self.send(msg)
 
     def displayWinner(self, winner: Player | None):
         """
         Displays the winner of the game.
         """
-        msg = "displayWinner" + winner.getUsername()
+        msg = (
+            self.possibleMessages.DISPLAY_WINNER
+            + self.possibleMessages.DELIMITER
+            + winner.pickle()
+        )
         self.send(msg)
 
     def displayRoundNumber(self, roundNumber: int):
         """
         Displays the round number.
         """
-        msg = "displayRoundNumber" + roundNumber
-        self.send(msg)	
+        msg = (
+            self.possibleMessages.DISPLAY_ROUND_NUMBER
+            + self.possibleMessages.DELIMITER
+            + roundNumber
+        )
+        self.send(msg)
 
 
-class clientPlayer(NetworkedPlayer):
+class clientPlayer(GUI, SocketManager):
     """
     This class will be used to create a client which will join a game
     It will send data to the server when requested
     It will render the game
+    This class will be used independently -> the game will not be running locally
     """
 
     def __init__(self, stats: Statistics, host, port):
@@ -607,7 +663,7 @@ class clientPlayer(NetworkedPlayer):
         It will listen for messages from the server and respond accordingly
         """
         while True:
-            msg = self.recv()
+            msg = self.receiveData()
             if msg.startswith("getMove"):
                 move = self.getMove()
                 self.send(move)
