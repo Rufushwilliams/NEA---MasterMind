@@ -551,6 +551,7 @@ class SocketManager(ABC):
         The data is pickled and then sent.
         The primary message will be in the form of:
         <message type><delimiter><no. of subsequent messages>
+        It will then wait for a confirmation message.
         Any subsequent messages will be in the form of:
         <pickled data>
         Finally, it should receive a confirmation message.
@@ -558,6 +559,10 @@ class SocketManager(ABC):
         primaryMsg = msg.value + self.possibleMessages.DELIMITER.value + str(len(args))
         # send the primary message
         self.__send(primaryMsg.encode())
+        # receive confirmation message
+        c = self.__receiveData()
+        if not c or c.decode() != self.possibleMessages.CONFIRM.value:
+            raise MessageExchangeError("Did not receive confirmation")
         # send the subsequent messages
         for arg in args:
             self.__send(self.__pickleData(arg))
@@ -569,22 +574,24 @@ class SocketManager(ABC):
     def receiveMessage(self, timeout: bool = True) -> tuple[possibleMessages, list]:
         """
         Receives a message from the socket.
+        Sends a confirmation message.
         Splits it according to the delimiter.
         The message should be in the form of:
         <message type><delimiter><no. of subsequent messages>
         It then receives the subsequent pickled data.
         It returns a tuple of the message type and the list of data.
         """
-        # if we do not want the socket to timeout
+        # if we do not want the socket to timeout, we set the timeout to None
         if not timeout:
-            # save the old timeout value
             oldTimeout = self.socket.gettimeout()
-            # set the timeout to None
             self.socket.settimeout(None)
         # receive the primary msg
         primaryMsg = self.__receiveData()
         if not primaryMsg:
             raise NoMessageError("No message received")
+        # send a confirmation message
+        self.__send(self.possibleMessages.CONFIRM.value.encode())
+        # split the primary msg into the message type and the number of subsequent messages
         msg, numData = self.splitData(primaryMsg.decode())
         encData = []
         # receive the subsequent data
