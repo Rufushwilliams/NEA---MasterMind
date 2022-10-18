@@ -5,6 +5,7 @@ from random import choice, sample
 from PyQt6 import QtWidgets as qtw
 from PyQt6 import QtCore as qtc
 import socket
+import pickle
 from PyQtPlayerUI import gameWidget, SignalsGUI, loopSpinner
 from DataBaseManager import Statistics
 from Board import Board
@@ -487,6 +488,22 @@ class GUI(Player):
         self.__mainWindow.setCentralWidget(self.__mainWidget)
 
 
+class MessageExchangeError(Exception):
+    """
+    An exception for errors in message exchange.
+    """
+
+    pass
+
+
+class NoMessageError(MessageExchangeError):
+    """
+    An exception for when no message is received.
+    """
+
+    pass
+
+
 class SocketManager(ABC):
     """
     An abstract class for handling sockets
@@ -495,49 +512,124 @@ class SocketManager(ABC):
     def __init__(self, host, port):
         self.host = host
         self.port = port
-        self.socket: socket.socket = None
+        self.socket: socket.socket = self.__createUnboundSocket()
         # socket attribute should be set by the subclass
 
-    def createUnboundSocket(self) -> socket.socket:
+    def __createUnboundSocket(self) -> socket.socket:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(3)
         return s
 
-    def createServerSocket(self) -> socket.socket:
-        s = self.createUnboundSocket()
+    def _createServerSocket(self) -> socket.socket:
+        s = self.__createUnboundSocket()
         s.bind((self.host, self.port))
         s.listen(1)
         conn, addr = s.accept()
         s.close()
         return conn
 
-    def createClientSocket(self) -> socket.socket:
-        s = self.createUnboundSocket()
+    def _createClientSocket(self) -> socket.socket:
+        s = self.__createUnboundSocket()
         s.connect((self.host, self.port))
         return s
 
-    def send(self, msg: str):
+    def __send(self, msg: bytes):
         """
         Sends a message to the socket.
         """
-        self.socket.sendall(msg.encode())
+        self.socket.sendall(msg)
 
-    def receiveData(self) -> str:
+    def __receiveData(self) -> bytes:
         """
         Receives a message from the socket.
         """
-        return self.socket.recv(2048).decode()
+        return self.socket.recv(2048)
 
-    def decodeData(self, data: str) -> tuple[str, list]:
+    def sendMessage(self, msg: possibleMessages, *args):
         """
-        Decodes the data received from the socket.
+        Sends data to the socket.
+        The data is pickled and then sent.
+        The primary message will be in the form of:
+        <message type><delimiter><no. of subsequent messages>
+        Any subsequent messages will be in the form of:
+        <pickled data>
+        Finally, it should receive a confirmation message.
+        """
+        primaryMsg = msg.value + self.possibleMessages.DELIMITER.value + str(len(args))
+        # send the primary message
+        self.__send(primaryMsg.encode())
+        # send the subsequent messages
+        for arg in args:
+            self.__send(self.__pickleData(arg))
+        # receive confirmation message
+        c = self.__receiveData()
+        if not c or c.decode() != self.possibleMessages.CONFIRM.value:
+            raise MessageExchangeError("Did not receive confirmation")
+
+    def receiveMessage(self, timeout: bool = True) -> tuple[possibleMessages, list]:
+        """
+        Receives a message from the socket.
+        Splits it according to the delimiter.
+        The message should be in the form of:
+        <message type><delimiter><no. of subsequent messages>
+        It then receives the subsequent pickled data.
+        It returns a tuple of the message type and the list of data.
+        """
+        # if we do not want the socket to timeout
+        if not timeout:
+            # save the old timeout value
+            oldTimeout = self.socket.gettimeout()
+            # set the timeout to None
+            self.socket.settimeout(None)
+        # receive the primary msg
+        primaryMsg = self.__receiveData()
+        if not primaryMsg:
+            raise NoMessageError("No message received")
+        msg, numData = self.splitData(primaryMsg.decode())
+        encData = []
+        # receive the subsequent data
+        for _ in range(int(numData[0])):
+            d = self.__receiveData()
+            if not d:
+                raise MessageExchangeError("Did not receive expected data")
+            encData.append(d)
+        # send a confirmation message
+        self.__send(self.possibleMessages.CONFIRM.value.encode())
+        # unpickle the data
+        data = [self.__unpickleData(d) for d in encData]
+        if not timeout:
+            # set the timeout back to the old value
+            self.socket.settimeout(oldTimeout)
+        return msg, data
+
+    def splitData(self, data: str) -> tuple[possibleMessages, list]:
+        """
+        Splits the data received from the socket.
         Returns a tuple of the message and a list of the data.
         """
-        msg = data.split(self.possibleMessages.DELIMITER)
+        msg = data.split(self.possibleMessages.DELIMITER.value)
+        return self.getEnumFromStr(msg[0]), msg[1:]
+
+    def getEnumFromStr(self, msg: str) -> possibleMessages:
+        """
+        Convert a string value into its enum equivalent from the enum possibleMessages.
+        """
         for member in self.possibleMessages:
-            if msg[0] == member.value:
-                return member, msg[1:]
-        raise ValueError(f"Invalid message received: {msg[0]}")
+            if msg == member.value:
+                return member
+        raise ValueError(f"Invalid Enum: {msg}")
+
+    def __pickleData(self, data) -> bytes:
+        """
+        Pickles the data and returns it as bytes
+        """
+        return pickle.dumps(data)
+
+    def __unpickleData(self, data: bytes):
+        """
+        Unpickles the data and returns it
+        """
+        return pickle.loads(data)
 
     def close(self):
         """
@@ -555,11 +647,15 @@ class SocketManager(ABC):
 
         DELIMITER = "#"
         GET_MOVE = "getMove"
+        RETURN_MOVE = "returnMove"
         GET_CODE = "getCode"
+        RETURN_CODE = "returnCode"
         DISPLAY_BOARD = "displayBoard"
         DISPLAY_ROUND_WINNER = "displayRoundWinner"
         DISPLAY_WINNER = "displayWinner"
         DISPLAY_ROUND_NUMBER = "displayRoundNumber"
+        DISCONNECT = "disconnect"
+        CONFIRM = "confirm"
 
 
 class serverPlayer(Player, SocketManager):
@@ -572,77 +668,65 @@ class serverPlayer(Player, SocketManager):
 
     def __init__(self, stats: Statistics, host, port):
         super().__init__(stats, host, port)
-        self.socket = self.createServerSocket()
+        self.socket = self._createServerSocket()
 
     def getMove(self, board: Board) -> list[int]:
         """
         Returns the players next guess.
         """
-        msg = (
-            self.possibleMessages.GET_MOVE
-            + self.possibleMessages.DELIMITER
-            + board.pickle()
-        )
-        self.send(msg)
-        return self.receiveData()
+        self.sendMessage(self.possibleMessages.GET_MOVE, board)
+        msg, returnData = self.receiveMessage(timeout=False)
+        if msg != self.possibleMessages.RETURN_MOVE:
+            raise MessageExchangeError("Did not receive expected message")
+        return returnData[0]
 
     def getCode(self, board: Board) -> list[int]:
         """
         Returns the players code.
         """
-        msg = (
-            self.possibleMessages.GET_CODE
-            + self.possibleMessages.DELIMITER
-            + board.pickle()
-        )
-        self.send(msg)
-        return self.receiveData()
+        self.sendMessage(self.possibleMessages.GET_CODE, board)
+        msg, returnData = self.receiveMessage(timeout=False)
+        if msg != self.possibleMessages.RETURN_CODE:
+            raise MessageExchangeError("Did not receive expected message")
+        return returnData[0]
 
     def displayBoard(self, board: Board, code: list = None):
         """
         Displays the board to the player.
         """
-        msg = (
-            self.possibleMessages.DISPLAY_BOARD
-            + self.possibleMessages.DELIMITER
-            + board.pickle()
-            + self.possibleMessages.DELIMITER
-            + code.pickle()
-        )
-        self.send(msg)
+        self.sendMessage(self.possibleMessages.DISPLAY_BOARD, board, code)
 
     def displayRoundWinner(self, winner: Player):
         """
         Displays the winner of the round.
         """
-        msg = (
-            self.possibleMessages.DISPLAY_ROUND_WINNER
-            + self.possibleMessages.DELIMITER
-            + winner.pickle()
-        )
-        self.send(msg)
+        self.sendMessage(self.possibleMessages.DISPLAY_ROUND_WINNER, winner)
 
     def displayWinner(self, winner: Player | None):
         """
         Displays the winner of the game.
         """
-        msg = (
-            self.possibleMessages.DISPLAY_WINNER
-            + self.possibleMessages.DELIMITER
-            + winner.pickle()
-        )
-        self.send(msg)
+        self.sendMessage(self.possibleMessages.DISPLAY_WINNER, winner)
 
     def displayRoundNumber(self, roundNumber: int):
         """
         Displays the round number.
         """
-        msg = (
-            self.possibleMessages.DISPLAY_ROUND_NUMBER
-            + self.possibleMessages.DELIMITER
-            + roundNumber
-        )
-        self.send(msg)
+        self.sendMessage(self.possibleMessages.DISPLAY_ROUND_NUMBER, roundNumber)
+
+    def disconnect(self):
+        """
+        Disconnects the client and closes the socket.
+        """
+        self.sendMessage(self.possibleMessages.DISCONNECT)
+        self.close()
+
+    def __del__(self):
+        try:
+            self.disconnect()
+        except:
+            pass
+        return super().__del__()
 
 
 class clientPlayer(GUI, SocketManager):
@@ -655,28 +739,31 @@ class clientPlayer(GUI, SocketManager):
 
     def __init__(self, stats: Statistics, host, port):
         super().__init__(stats, host, port)
-        self.socket = self.createClientSocket()
+        self.socket = self._createClientSocket()
 
     def mainLoop(self):
-        """
-        This is the main loop of the game
-        It will listen for messages from the server and respond accordingly
-        """
         while True:
-            msg = self.receiveData()
-            if msg.startswith("getMove"):
-                move = self.getMove()
-                self.send(move)
-            elif msg.startswith("getCode"):
-                pass
-            elif msg.startswith("displayBoard"):
-                pass
-            elif msg.startswith("displayRoundWinner"):
-                pass
-            elif msg.startswith("displayWinner"):
-                pass
-            elif msg.startswith("displayRoundNumber"):
-                pass
+            try:
+                msg, data = self.receiveMessage()
+            except NoMessageError:
+                continue
+            if msg == self.possibleMessages.GET_MOVE:
+                move = self.getMove(data[0])
+                self.sendMessage(self.possibleMessages.RETURN_MOVE, move)
+            elif msg == self.possibleMessages.GET_CODE:
+                code = self.getCode(data[0])
+                self.sendMessage(self.possibleMessages.RETURN_CODE, code)
+            elif msg == self.possibleMessages.DISPLAY_BOARD:
+                self.displayBoard(data[0], data[1])
+            elif msg == self.possibleMessages.DISPLAY_ROUND_WINNER:
+                self.displayRoundWinner(data[0])
+            elif msg == self.possibleMessages.DISPLAY_WINNER:
+                self.displayWinner(data[0])
+            elif msg == self.possibleMessages.DISPLAY_ROUND_NUMBER:
+                self.displayRoundNumber(data[0])
+            elif msg == self.possibleMessages.DISCONNECT:
+                self.close()
+            elif msg == self.possibleMessages.CONFIRM:
+                raise MessageExchangeError("Nothing to confirm")
             else:
-                print("Unknown message: " + msg)
-                break
+                raise MessageExchangeError(f"Invalid message: {msg}")
