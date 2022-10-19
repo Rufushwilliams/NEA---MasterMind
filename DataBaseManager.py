@@ -105,7 +105,11 @@ class dataBaseManager:
                 (username,),
             )
             stats = cur.fetchone()
-        return Statistics(*stats)
+        if stats:
+            return Statistics(*stats)
+        else:
+            # if the user doesn't exist, create an empty stats table
+            return self.createEmptyStatsTable(username)
 
     def createEmptyStatsTable(self, username: str) -> Statistics:
         """
@@ -127,8 +131,19 @@ class dataBaseManager:
                     stats.username,
                 ),
             )
-    
-    def savePastGame(self, pl1Username: str, pl2Username: str, winnerUsername: str, lengthOfCode: int, numGuesses: int, numRounds: int, colourNum: int, duplicatesAllowed: bool, timeTaken: float):
+
+    def savePastGame(
+        self,
+        pl1Username: str,
+        pl2Username: str,
+        winnerUsername: str,
+        lengthOfCode: int,
+        numGuesses: int,
+        numRounds: int,
+        colourNum: int,
+        duplicatesAllowed: bool,
+        timeTaken: float,
+    ):
         with openDB(self.db) as cur:
             cur.execute(
                 """INSERT INTO pastGames (player1, player2, winner, lengthOfCode, numGuesses, numRounds, colourNum, duplicatesAllowed, date, timeTaken) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
@@ -142,9 +157,18 @@ class dataBaseManager:
                     colourNum,
                     duplicatesAllowed,
                     strftime("%d/%m/%Y"),
-                    timeTaken
+                    timeTaken,
                 ),
             )
+
+    def getPastGames(self, username: str) -> list[tuple]:
+        with openDB(self.db) as cur:
+            cur.execute(
+                "SELECT gameID, player1, player2, winner, lengthOfCode, numGuesses, numRounds, colourNum, duplicatesAllowed, date, timeTaken FROM pastGames WHERE player1 = ? OR player2 = ?",
+                (username, username),
+            )
+            results = cur.fetchall()
+        return results
 
 
 @dataclass

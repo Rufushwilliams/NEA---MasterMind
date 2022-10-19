@@ -158,22 +158,24 @@ class Game:
         Displays the winner of the round to the ui.
         Calls both players' displayRoundWinner method
         """
+        winnerName = roundWinner.getUsername()
         if type(self.__player1) == Terminal and type(self.__player2) == Terminal:
-            self.__player1.displayRoundWinner(roundWinner)
+            self.__player1.displayRoundWinner(winnerName)
         else:
-            self.__player1.displayRoundWinner(roundWinner)
-            self.__player2.displayRoundWinner(roundWinner)
+            self.__player1.displayRoundWinner(winnerName)
+            self.__player2.displayRoundWinner(winnerName)
 
     def displayWinner(self):
         """
         Displays the winner to the ui.
         Calls both players' displayWinner method
         """
+        winnerName = self.__winner.getUsername() if self.__winner is not None else None
         if type(self.__player1) == Terminal and type(self.__player2) == Terminal:
-            self.__player1.displayWinner(self.__winner)
+            self.__player1.displayWinner(winnerName)
         else:
-            self.__player1.displayWinner(self.__winner)
-            self.__player2.displayWinner(self.__winner)
+            self.__player1.displayWinner(winnerName)
+            self.__player2.displayWinner(winnerName)
 
     def displayRoundNumber(self, roundNumber: int):
         """

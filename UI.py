@@ -139,7 +139,7 @@ class GUI(UI):
         self.joinOnlineMultiplayerPage.bindJoinGameButton(
             lambda: self.joinGame(
                 host=self.joinOnlineMultiplayerPage.getHost(),
-                port=self.joinOnlineMultiplayerPage.getPort(),
+                port=int(self.joinOnlineMultiplayerPage.getPort()),
             )
         )
         self.joinOnlineMultiplayerPage.bindBackButton(self.showModePage)
@@ -332,12 +332,18 @@ class GUI(UI):
         self.showWelcomePage()
         self.startGame(game, timed)
 
-    def joinGame(self, host, port):
+    def joinGame(self, host: str, port: int):
         stats = self._dbm.createStatsTable(self.p1Username)
         p1 = pl.clientPlayer(host, port, stats)
-        thread = threading.Thread(target=p1.playGame)
+        p1.show()
+        thread = ResultThread(target=p1.playGame)
+        # set the return value to true as it will not return anything
+        # thread.value = True
         thread.daemon = True
+        self.timer = QTimer()
+        self.timer.timeout.connect(lambda gameThread=thread: self.gameOver(gameThread))
         thread.start()
+        self.timer.start(1000)
         self.showWelcomePage()
         self.mainWindow.hide()
 
@@ -374,6 +380,8 @@ class GUI(UI):
                 raise RuntimeError(
                     "Game thread returned None. Probably means the game crashed."
                 )
+            if gameThread.value == True:
+                return
             timeTaken, won = gameThread.value
             if timed:
                 self.timedModeOver(timeTaken, won)

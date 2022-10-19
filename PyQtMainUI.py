@@ -138,7 +138,7 @@ class JoinOnlineMultiplayerPage(qtw.QWidget):
         self.hostEnter.setPlaceholderText("Host")
         self.hostEnter.setFont(qtg.QFont("Times", 20))
         self.hostEnter.textChanged.connect(
-            lambda t=self.hostEnter.text(): self.updateUsernameText(t)
+            lambda t=self.hostEnter.text(): self.updateHostText(t)
         )
         self.layout().addWidget(self.hostEnter)
         self.portEnter = qtw.QLineEdit()
@@ -147,7 +147,7 @@ class JoinOnlineMultiplayerPage(qtw.QWidget):
         self.portEnter.setPlaceholderText("Port")
         self.portEnter.setFont(qtg.QFont("Times", 20))
         self.portEnter.textChanged.connect(
-            lambda t=self.portEnter.text(): self.updatePasswordText(t)
+            lambda t=self.portEnter.text(): self.updatePortText(t)
         )
         self.layout().addWidget(self.portEnter)
         self.joinGameButton = qtw.QPushButton("Join Game")

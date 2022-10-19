@@ -26,13 +26,13 @@ class Player(ABC):
     def getStats(self) -> Statistics:
         return self._stats
 
-    def updateStats(self, winner: Player | None, roundNumber: int, timePlayed: float):
+    def updateStats(self, winner: str | None, roundNumber: int, timePlayed: float):
         """
         Updates the players statistics
         """
         if winner is None:
             self._stats.draws += 1
-        elif winner == self:
+        elif winner == self.getUsername():
             self._stats.wins += 1
         else:
             self._stats.losses += 1
@@ -62,14 +62,14 @@ class Player(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def displayRoundWinner(self, winner: Player):
+    def displayRoundWinner(self, winner: str):
         """
         Displays the winner of the round.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def displayWinner(self, winner: Player | None):
+    def displayWinner(self, winner: str | None):
         """
         Displays the winner of the game.
         """
@@ -128,14 +128,14 @@ class Computer(Player):
         """
         self.__board = board
 
-    def displayRoundWinner(self, winner: Player):
+    def displayRoundWinner(self, winner: str):
         """
         Clears the saved board and algorithm.
         """
         self.__board = None
         self.__algorithm = None
 
-    def displayWinner(self, winner: Player | None):
+    def displayWinner(self, winner: str | None):
         """
         The computer does not need to do anything when the game is over.
         """
@@ -247,20 +247,20 @@ class Terminal(Player):
             print(f"The code was {code}")
         print()
 
-    def displayRoundWinner(self, winner: Player):
+    def displayRoundWinner(self, winner: str):
         """
         Displays the winner of the round to the ui.
         """
-        print(f"{winner.getUsername()} wins this round!")
+        print(f"{winner} wins this round!")
 
-    def displayWinner(self, winner: Player | None):
+    def displayWinner(self, winner: str | None):
         """
         Displays the winner to the ui
         """
         if winner is None:
             print("It's a draw!")
         else:
-            print(f"Congrats!! The winner was {winner.getUsername()}")
+            print(f"Congrats!! The winner was {winner}")
 
     def displayRoundNumber(self, roundNumber: int):
         """
@@ -275,6 +275,7 @@ class GUI(Player):
     """
     GUI class that inherits from the Player class
     This class is used as the Player class when displaying the game with a GUI
+    Call show to display the GUI
     """
 
     def __init__(self, stats: Statistics, popups: bool = True):
@@ -406,7 +407,7 @@ class GUI(Player):
                     if colour not in self.__colourMapping.values():
                         self.__colourMapping[i] = colour
 
-    def displayRoundWinner(self, winner: Player):
+    def displayRoundWinner(self, winner: str):
         """
         Calls the __displayRoundWinner method in the GUI.
         Emits a signal to the GUI to display the round winner.
@@ -416,13 +417,13 @@ class GUI(Player):
         if self.__popups:
             loopSpinner(self)
 
-    def __displayRoundWinner(self, winner: Player):
+    def __displayRoundWinner(self, winner: str):
         """
         Displays the winner of the round to the ui
         """
         self.initRound()
         if self.__popups:
-            message = self.__getMessage(f"{winner.getUsername()} wins this round!")
+            message = self.__getMessage(f"{winner} wins this round!")
             msgBox = qtw.QMessageBox()
             msgBox.setWindowTitle("Round Winner")
             msgBox.setText(message)
@@ -430,7 +431,7 @@ class GUI(Player):
             msgBox.exec()
             self.signals.returnGuess.emit([])
 
-    def displayWinner(self, winner: Player | None):
+    def displayWinner(self, winner: str | None):
         """
         Calls the __displayWinner method in the GUI.
         Emits a signal to the GUI to display the winner.
@@ -440,15 +441,13 @@ class GUI(Player):
         if self.__popups:
             loopSpinner(self)
 
-    def __displayWinner(self, winner: Player | None):
+    def __displayWinner(self, winner: str | None):
         """
         Displays the winner to the ui
         """
         self.initRound()
         if self.__popups:
-            message = (
-                f"{winner.getUsername()} wins the game!" if winner else "It's a draw!"
-            )
+            message = f"{winner} wins the game!" if winner else "It's a draw!"
             msgBox = qtw.QMessageBox()
             msgBox.setWindowTitle("Round Winner")
             msgBox.setText(message)
@@ -509,7 +508,7 @@ class SocketManager(ABC):
     An abstract class for handling sockets
     """
 
-    def __init__(self, host, port):
+    def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
         self.socket: socket.socket = self.__createUnboundSocket()
@@ -517,7 +516,7 @@ class SocketManager(ABC):
 
     def __createUnboundSocket(self) -> socket.socket:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # s.settimeout(3)
+        # s.settimeout(20)
         return s
 
     def _createServerSocket(self) -> socket.socket:
@@ -673,8 +672,9 @@ class serverPlayer(Player, SocketManager):
     It will be used as a player in the game
     """
 
-    def __init__(self, host, port, stats: Statistics):
-        super().__init__(stats, host, port)
+    def __init__(self, host: str, port: int, stats: Statistics):
+        Player.__init__(self, stats)
+        SocketManager.__init__(self, host, port)
         self.socket = self._createServerSocket()
 
     def getMove(self, board: Board) -> list[int]:
@@ -703,13 +703,13 @@ class serverPlayer(Player, SocketManager):
         """
         self.sendMessage(self.possibleMessages.DISPLAY_BOARD, board, code)
 
-    def displayRoundWinner(self, winner: Player):
+    def displayRoundWinner(self, winner: str):
         """
         Displays the winner of the round.
         """
         self.sendMessage(self.possibleMessages.DISPLAY_ROUND_WINNER, winner)
 
-    def displayWinner(self, winner: Player | None):
+    def displayWinner(self, winner: str | None):
         """
         Displays the winner of the game.
         """
@@ -744,8 +744,9 @@ class clientPlayer(GUI, SocketManager):
     This class will be used independently -> the game will not be running locally
     """
 
-    def __init__(self, host, port, stats: Statistics, popups: bool = True):
-        super().__init__(stats, popups, host, port)
+    def __init__(self, host: str, port: int, stats: Statistics, popups: bool = True):
+        GUI.__init__(self, stats, popups)
+        SocketManager.__init__(self, host, port)
         self.socket = self._createClientSocket()
 
     def playGame(self):
@@ -766,6 +767,8 @@ class clientPlayer(GUI, SocketManager):
                 self.displayRoundWinner(data[0])
             elif msg == self.possibleMessages.DISPLAY_WINNER:
                 self.displayWinner(data[0])
+                # game over
+                return True
             elif msg == self.possibleMessages.DISPLAY_ROUND_NUMBER:
                 self.displayRoundNumber(data[0])
             elif msg == self.possibleMessages.DISCONNECT:
