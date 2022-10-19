@@ -515,20 +515,26 @@ class SocketManager(ABC):
         # socket attribute should be set by the subclass
 
     def __createUnboundSocket(self) -> socket.socket:
+        # Create a socket object
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # s.settimeout(20)
+        s.settimeout(20)
         return s
 
     def _createServerSocket(self) -> socket.socket:
         s = self.__createUnboundSocket()
+        # Bind to the address
         s.bind((self.host, self.port))
         s.listen(1)
+        # wait for client connection.
         conn, addr = s.accept()
+        # close the listening socket
         s.close()
+        # return the client connection socket
         return conn
 
     def _createClientSocket(self) -> socket.socket:
         s = self.__createUnboundSocket()
+        # connect to the server
         s.connect((self.host, self.port))
         return s
 
@@ -543,6 +549,39 @@ class SocketManager(ABC):
         Receives a message from the socket.
         """
         return self.socket.recv(2048)
+    
+    def __sendMessage(self, msg: bytes):
+        """
+        Sends a message to the socket.
+        Waits for a confirmation message from the socket.
+        Sets the timeout to be 5 seconds while waiting for the confirmation message.
+        """
+        # send the message
+        self.__send(msg)
+        # change the timeout to 5 seconds
+        timeout = self.socket.gettimeout()
+        self.socket.settimeout(5)
+        try:
+            # wait for the confirmation message
+            c = self.__receiveData()
+        finally:
+            # reset the timeout
+            self.socket.settimeout(timeout)
+        # if the confirmation message is not the expected one, raise an exception
+        if not c or c.decode() != self.possibleMessages.CONFIRM.value:
+            raise MessageExchangeError("Did not receive confirmation")
+    
+    def __receiveMessage(self) -> bytes:
+        """
+        Receives a message from the socket.
+        Sends a confirmation message to the socket.
+        """
+        msg = self.__receiveData()
+        if not msg:
+            raise NoMessageError("No message received")
+        # send the confirmation message
+        self.__send(self.possibleMessages.CONFIRM.value.encode())
+        return msg
 
     def sendMessage(self, msg: possibleMessages, *args):
         """
@@ -557,18 +596,10 @@ class SocketManager(ABC):
         """
         primaryMsg = msg.value + self.possibleMessages.DELIMITER.value + str(len(args))
         # send the primary message
-        self.__send(primaryMsg.encode())
-        # receive confirmation message
-        c = self.__receiveData()
-        if not c or c.decode() != self.possibleMessages.CONFIRM.value:
-            raise MessageExchangeError("Did not receive confirmation")
+        self.__sendMessage(primaryMsg.encode())
         # send the subsequent messages
         for arg in args:
-            self.__send(self.__pickleData(arg))
-        # receive confirmation message
-        c = self.__receiveData()
-        if not c or c.decode() != self.possibleMessages.CONFIRM.value:
-            raise MessageExchangeError("Did not receive confirmation")
+            self.__sendMessage(self.__pickleData(arg))
 
     def receiveMessage(self, timeout: bool = True) -> tuple[possibleMessages, list]:
         """
@@ -585,22 +616,14 @@ class SocketManager(ABC):
             oldTimeout = self.socket.gettimeout()
             self.socket.settimeout(None)
         # receive the primary msg
-        primaryMsg = self.__receiveData()
-        if not primaryMsg:
-            raise NoMessageError("No message received")
-        # send a confirmation message
-        self.__send(self.possibleMessages.CONFIRM.value.encode())
+        primaryMsg = self.__receiveMessage()
         # split the primary msg into the message type and the number of subsequent messages
         msg, numData = self.splitData(primaryMsg.decode())
         encData = []
         # receive the subsequent data
         for _ in range(int(numData[0])):
-            d = self.__receiveData()
-            if not d:
-                raise MessageExchangeError("Did not receive expected data")
+            d = self.__receiveMessage()
             encData.append(d)
-        # send a confirmation message
-        self.__send(self.possibleMessages.CONFIRM.value.encode())
         # unpickle the data
         data = [self.__unpickleData(d) for d in encData]
         if not timeout:
@@ -731,9 +754,8 @@ class serverPlayer(Player, SocketManager):
     def __del__(self):
         try:
             self.disconnect()
-        except:
-            pass
-        return super().__del__()
+        finally:
+            return super().__del__()
 
 
 class clientPlayer(GUI, SocketManager):
