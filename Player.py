@@ -517,7 +517,7 @@ class SocketManager(ABC):
 
     def __createUnboundSocket(self) -> socket.socket:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(3)
+        # s.settimeout(3)
         return s
 
     def _createServerSocket(self) -> socket.socket:
@@ -673,7 +673,7 @@ class serverPlayer(Player, SocketManager):
     It will be used as a player in the game
     """
 
-    def __init__(self, stats: Statistics, host, port):
+    def __init__(self, host, port, stats: Statistics):
         super().__init__(stats, host, port)
         self.socket = self._createServerSocket()
 
@@ -744,11 +744,11 @@ class clientPlayer(GUI, SocketManager):
     This class will be used independently -> the game will not be running locally
     """
 
-    def __init__(self, stats: Statistics, host, port):
-        super().__init__(stats, host, port)
+    def __init__(self, host, port, stats: Statistics, popups: bool = True):
+        super().__init__(stats, popups, host, port)
         self.socket = self._createClientSocket()
 
-    def mainLoop(self):
+    def playGame(self):
         while True:
             try:
                 msg, data = self.receiveMessage()

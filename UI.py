@@ -114,6 +114,7 @@ class GUI(UI):
             self.ALGORITHMTYPES,
             self._computerAlgorithmType,
         )
+        self.joinOnlineMultiplayerPage = qtui.JoinOnlineMultiplayerPage()
         # Add all the pages to the main widget
         self.mainWidget.addWidget(self.loginPage)
         self.mainWidget.addWidget(self.welcomePage)
@@ -121,6 +122,7 @@ class GUI(UI):
         self.mainWidget.addWidget(self.modePage)
         self.mainWidget.addWidget(self.readyPage)
         self.mainWidget.addWidget(self.advancedSetupPage)
+        self.mainWidget.addWidget(self.joinOnlineMultiplayerPage)
 
         # Setup the buttons on the pages
         self.__setupLoginPage(self.showWelcomePage)
@@ -134,6 +136,13 @@ class GUI(UI):
         self.advancedSetupPage.bindConfirmButton(
             lambda: self.setValuesFromAdvanced(), lambda: self.showReadyPage()
         )
+        self.joinOnlineMultiplayerPage.bindJoinGameButton(
+            lambda: self.joinGame(
+                host=self.joinOnlineMultiplayerPage.getHost(),
+                port=self.joinOnlineMultiplayerPage.getPort(),
+            )
+        )
+        self.joinOnlineMultiplayerPage.bindBackButton(self.showModePage)
 
     def __setupLoginPage(
         self,
@@ -168,11 +177,11 @@ class GUI(UI):
         self.modePage.bindSingleplayerButton(
             lambda: self.setMode(qtui.gameModes.SINGLEPLAYER)
         )
-        self.modePage.bindMultiplayerButton(
-            lambda: self.setMode(qtui.gameModes.MULTIPLAYER)
+        self.modePage.bindLocalMultiplayerButton(
+            lambda: self.setMode(qtui.gameModes.LOCAL_MULTIPLAYER)
             if self.p2loggedin
             else (
-                self.setMode(qtui.gameModes.MULTIPLAYER, show=False),
+                self.setMode(qtui.gameModes.LOCAL_MULTIPLAYER, show=False),
                 self.__setupLoginPage(
                     self.showReadyPage,
                     player1=False,
@@ -181,6 +190,14 @@ class GUI(UI):
                 ),
                 self.showLoginPage(),
             )
+        )
+        # TODO: MAKE IT SO YOU CAN CHOOSE THE HOST AND PORT
+        self.modePage.bindHostOnlineMultiplayerButton(
+            lambda: self.setMode(qtui.gameModes.HOST_ONLINE_MULTIPLAYER),
+        )
+        self.modePage.bindJoinOnlineMultiplayerButton(
+            lambda: self.setMode(qtui.gameModes.JOIN_ONLINE_MULTIPLAYER, show=False),
+            lambda: self.showJoinOnlineMultiplayerPage(),
         )
         self.modePage.bindTimedButton(
             lambda: self.setMode(qtui.gameModes.TIMED, start=True)
@@ -204,6 +221,9 @@ class GUI(UI):
 
     def showAdvancedSetupPage(self):
         self.mainWidget.setCurrentWidget(self.advancedSetupPage)
+
+    def showJoinOnlineMultiplayerPage(self):
+        self.mainWidget.setCurrentWidget(self.joinOnlineMultiplayerPage)
 
     def setMode(self, mode: qtui.gameModes, start: bool = False, show: bool = True):
         self._mode = mode
@@ -276,7 +296,16 @@ class GUI(UI):
             self.player2 = pl.Computer(
                 self._dbm.createEmptyStatsTable("Computer"), self._computerAlgorithmType
             )
-        elif self._mode == qtui.gameModes.MULTIPLAYER:
+        elif self._mode == qtui.gameModes.LOCAL_MULTIPLAYER:
+            pass
+        elif self._mode == qtui.gameModes.HOST_ONLINE_MULTIPLAYER:
+            # TODO: Make it so you can choose the host and port
+            HOST = "127.0.0.1"
+            PORT = 65432
+            self.player2 = pl.serverPlayer(
+                HOST, PORT, self._dbm.createEmptyStatsTable("Server")
+            )
+        elif self._mode == qtui.gameModes.JOIN_ONLINE_MULTIPLAYER:
             pass
         elif self._mode == qtui.gameModes.TIMED:
             self.player1.setPopups(False)
@@ -302,6 +331,15 @@ class GUI(UI):
         )
         self.showWelcomePage()
         self.startGame(game, timed)
+
+    def joinGame(self, host, port):
+        stats = self._dbm.createStatsTable(self.p1Username)
+        p1 = pl.clientPlayer(host, port, stats)
+        thread = threading.Thread(target=p1.playGame)
+        thread.daemon = True
+        thread.start()
+        self.showWelcomePage()
+        self.mainWindow.hide()
 
     def startGame(self, game, timed: bool = False):
         """

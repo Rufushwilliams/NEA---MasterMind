@@ -126,6 +126,107 @@ class LoginPage(qtw.QWidget):
             self.backButton.clicked.connect(func)
 
 
+class JoinOnlineMultiplayerPage(qtw.QWidget):
+    def __init__(self):
+        super().__init__()
+        self.hostText = ""
+        self.portText = ""
+        self.setLayout(qtw.QVBoxLayout())
+        self.hostEnter = qtw.QLineEdit()
+        self.hostEnter.setFixedWidth(250)
+        self.hostEnter.setFixedHeight(50)
+        self.hostEnter.setPlaceholderText("Host")
+        self.hostEnter.setFont(qtg.QFont("Times", 20))
+        self.hostEnter.textChanged.connect(
+            lambda t=self.hostEnter.text(): self.updateUsernameText(t)
+        )
+        self.layout().addWidget(self.hostEnter)
+        self.portEnter = qtw.QLineEdit()
+        self.portEnter.setFixedWidth(250)
+        self.portEnter.setFixedHeight(50)
+        self.portEnter.setPlaceholderText("Port")
+        self.portEnter.setFont(qtg.QFont("Times", 20))
+        self.portEnter.textChanged.connect(
+            lambda t=self.portEnter.text(): self.updatePasswordText(t)
+        )
+        self.layout().addWidget(self.portEnter)
+        self.joinGameButton = qtw.QPushButton("Join Game")
+        self.joinGameButton.setFixedWidth(250)
+        self.joinGameButton.setFixedHeight(50)
+        self.joinGameButton.setFont(qtg.QFont("Times", 20))
+        self.layout().addWidget(self.joinGameButton)
+        self.backButton = qtw.QPushButton("Back")
+        self.backButton.setFixedWidth(250)
+        self.backButton.setFixedHeight(50)
+        self.backButton.setFont(qtg.QFont("Times", 20))
+        self.layout().addWidget(self.backButton)
+
+    # def showLoginError(self):
+    #     error = qtw.QMessageBox()
+    #     error.setIcon(qtw.QMessageBox.Icon.Critical)
+    #     error.setText("Incorrect username or password")
+    #     error.setWindowTitle("Error")
+    #     error.exec()
+    #     self.portEnter.clear()
+
+    # def showLoginSuccess(self):
+    #     success = qtw.QMessageBox()
+    #     success.setIcon(qtw.QMessageBox.Icon.Information)
+    #     success.setText("Logged in!")
+    #     success.setWindowTitle("Success")
+    #     success.exec()
+    #     self.hostEnter.clear()
+    #     self.portEnter.clear()
+
+    # def showRegisterError(self):
+    #     error = qtw.QMessageBox()
+    #     error.setIcon(qtw.QMessageBox.Icon.Critical)
+    #     error.setText("Username already taken")
+    #     error.setWindowTitle("Error")
+    #     error.exec()
+    #     self.hostEnter.clear()
+    #     self.portEnter.clear()
+
+    # def showRegisterSuccess(self):
+    #     success = qtw.QMessageBox()
+    #     success.setIcon(qtw.QMessageBox.Icon.Information)
+    #     success.setText("Registered!")
+    #     success.setWindowTitle("Success")
+    #     success.exec()
+    #     self.hostEnter.clear()
+    #     self.portEnter.clear()
+
+    def updateHostText(self, text: str):
+        self.hostText = text
+
+    def updatePortText(self, text: str):
+        self.portText = text
+
+    def getHost(self) -> str:
+        return self.hostText
+
+    def getPort(self) -> str:
+        return self.portText
+
+    def bindJoinGameButton(self, *args: Callable):
+        try:
+            while True:
+                self.joinGameButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.joinGameButton.clicked.connect(func)
+
+    def bindBackButton(self, *args: Callable):
+        try:
+            while True:
+                self.backButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.backButton.clicked.connect(func)
+
+
 class WelcomePage(qtw.QWidget):
     def __init__(self):
         super().__init__()
@@ -203,11 +304,21 @@ class ModePage(qtw.QWidget):
         self.singleplayerButton.setFixedHeight(50)
         self.singleplayerButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.singleplayerButton)
-        self.multiplayerButton = qtw.QPushButton("Multiplayer")
-        self.multiplayerButton.setFixedWidth(300)
-        self.multiplayerButton.setFixedHeight(50)
-        self.multiplayerButton.setFont(qtg.QFont("Times", 20))
-        self.layout().addWidget(self.multiplayerButton)
+        self.localMultiplayerButton = qtw.QPushButton("Local Multiplayer")
+        self.localMultiplayerButton.setFixedWidth(300)
+        self.localMultiplayerButton.setFixedHeight(50)
+        self.localMultiplayerButton.setFont(qtg.QFont("Times", 20))
+        self.layout().addWidget(self.localMultiplayerButton)
+        self.hostOnlineMultiplayerButton = qtw.QPushButton("Host Online Multiplayer")
+        self.hostOnlineMultiplayerButton.setFixedWidth(300)
+        self.hostOnlineMultiplayerButton.setFixedHeight(50)
+        self.hostOnlineMultiplayerButton.setFont(qtg.QFont("Times", 20))
+        self.layout().addWidget(self.hostOnlineMultiplayerButton)
+        self.joinOnlineMultiplayerButton = qtw.QPushButton("Join Online Multiplayer")
+        self.joinOnlineMultiplayerButton.setFixedWidth(300)
+        self.joinOnlineMultiplayerButton.setFixedHeight(50)
+        self.joinOnlineMultiplayerButton.setFont(qtg.QFont("Times", 20))
+        self.layout().addWidget(self.joinOnlineMultiplayerButton)
         self.timedButton = qtw.QPushButton("Timed Mode")
         self.timedButton.setFixedWidth(300)
         self.timedButton.setFixedHeight(50)
@@ -228,14 +339,32 @@ class ModePage(qtw.QWidget):
         for func in args:
             self.singleplayerButton.clicked.connect(func)
 
-    def bindMultiplayerButton(self, *args: Callable):
+    def bindLocalMultiplayerButton(self, *args: Callable):
         try:
             while True:
-                self.multiplayerButton.clicked.disconnect()
+                self.localMultiplayerButton.clicked.disconnect()
         except TypeError:
             pass
         for func in args:
-            self.multiplayerButton.clicked.connect(func)
+            self.localMultiplayerButton.clicked.connect(func)
+
+    def bindHostOnlineMultiplayerButton(self, *args: Callable):
+        try:
+            while True:
+                self.hostOnlineMultiplayerButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.hostOnlineMultiplayerButton.clicked.connect(func)
+
+    def bindJoinOnlineMultiplayerButton(self, *args: Callable):
+        try:
+            while True:
+                self.joinOnlineMultiplayerButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.joinOnlineMultiplayerButton.clicked.connect(func)
 
     def bindTimedButton(self, *args: Callable):
         try:
@@ -471,5 +600,7 @@ class AdvancedSetupPage(qtw.QWidget):
 
 class gameModes(Enum):
     SINGLEPLAYER = 1
-    MULTIPLAYER = 2
-    TIMED = 3
+    LOCAL_MULTIPLAYER = 2
+    HOST_ONLINE_MULTIPLAYER = 3
+    JOIN_ONLINE_MULTIPLAYER = 4
+    TIMED = 5

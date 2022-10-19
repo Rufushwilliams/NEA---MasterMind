@@ -56,19 +56,19 @@ class Game:
 
     def getPlayer2(self) -> Player:
         return self.__player2
-    
+
     def getLengthOfCode(self) -> int:
         return self.__length
-    
+
     def getNumGuesses(self) -> int:
         return self.__numGuesses
 
     def getNumRounds(self) -> int:
         return self.__numRounds
-    
+
     def getColourNum(self) -> int:
         return self.__colourNum
-    
+
     def getDuplicatesAllowed(self) -> bool:
         return self.__duplicatesAllowed
 
