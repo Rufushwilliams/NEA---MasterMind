@@ -549,7 +549,7 @@ class SocketManager(ABC):
         Receives a message from the socket.
         """
         return self.socket.recv(2048)
-    
+
     def __sendMessage(self, msg: bytes):
         """
         Sends a message to the socket.
@@ -570,7 +570,7 @@ class SocketManager(ABC):
         # if the confirmation message is not the expected one, raise an exception
         if not c or c.decode() != self.possibleMessages.CONFIRM.value:
             raise MessageExchangeError("Did not receive confirmation")
-    
+
     def __receiveMessage(self) -> bytes:
         """
         Receives a message from the socket.

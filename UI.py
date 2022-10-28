@@ -96,8 +96,9 @@ class GUI(UI):
     def initUI(self):
         # Create the main window
         self.mainWindow = qtw.QMainWindow()
-        self.mainWidget = qtw.QStackedWidget()
-        self.mainWindow.setCentralWidget(self.mainWidget)
+        self.backgroundWidget = qtui.mainWidget()
+        self.mainWidget = self.backgroundWidget.stackedWidget
+        self.mainWindow.setCentralWidget(self.backgroundWidget)
         self.mainWindow.setWindowTitle("Mastermind")
         # Create all the pages
         self.loginPage = qtui.LoginPage()
@@ -337,8 +338,6 @@ class GUI(UI):
         p1 = pl.clientPlayer(host, port, stats)
         p1.show()
         thread = ResultThread(target=p1.playGame)
-        # set the return value to true as it will not return anything
-        # thread.value = True
         thread.daemon = True
         self.timer = QTimer()
         self.timer.timeout.connect(lambda gameThread=thread: self.gameOver(gameThread))

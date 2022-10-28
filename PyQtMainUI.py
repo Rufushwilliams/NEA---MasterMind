@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Callable
+from random import choice, randint
 from PyQt6 import QtWidgets as qtw
 from PyQt6 import QtGui as qtg
 from PyQt6 import QtCore as qtc
@@ -596,6 +597,149 @@ class AdvancedSetupPage(qtw.QWidget):
             pass
         for func in args:
             self.confirmButton.clicked.connect(func)
+
+
+class circleWidget(qtw.QFrame):
+    """
+    A class that creates a circle widget with a given colour and radius.
+    This widget can then be animated by the animation class.
+    """
+
+    def __init__(self, colour, radius: int):
+        super().__init__()
+        self.setFixedSize(radius, radius)
+        self.setStyleSheet(
+            f"border-radius: {self.width()//2}px; border: 1px solid black; background-color: {colour};"
+        )
+
+
+class animatedCircleWidget(circleWidget):
+    """
+    A class that creates a circle widget with a given colour and radius.
+    It then animates the widget by moving it to a random position on the screen.
+    """
+
+    def __init__(
+        self,
+        colour,
+        radius: int = 50,
+        duration: int = 3000,
+        moveFrom: qtc.QPoint = qtc.QPoint(0, 0),
+        moveTo: qtc.QPoint = qtc.QPoint(100, 100),
+    ):
+        super().__init__(colour, radius)
+        self.animation = qtc.QPropertyAnimation(self, b"pos")
+        self.animation.setDuration(duration)
+        self.setAnimationLocations(moveFrom, moveTo)
+        self.animation.setEasingCurve(qtc.QEasingCurve.Type.InOutQuad)
+        self.animation.finished.connect(self.deleteLater)
+
+    def setAnimationDuration(self, duration: int):
+        self.animation.setDuration(duration)
+
+    def setAnimationLocations(self, moveFrom: qtc.QPoint, moveTo: qtc.QPoint):
+        self.animation.setStartValue(moveFrom)
+        self.animation.setEndValue(moveTo)
+
+    def startAnimation(self):
+        self.animation.start()
+
+
+class centreSpawningWidget(qtw.QFrame):
+    """
+    A class that creates a widget that spawns widgets in the centre of the screen
+    """
+
+    def __init__(self, num: int = 50):
+        super().__init__()
+        # get the screen size
+        screenSize = qtw.QApplication.primaryScreen().size()
+        self.setFixedSize(screenSize)
+        for _ in range(num):
+            self.createAnimatedColourWidget()
+
+    def generateAnimatedColourWidget(self):
+        """
+        Creates a circle widget with a random colour and radius.
+        The animation positions are not bound yet.
+        """
+        possibleColours = qtg.QColor().colorNames()
+        colour = choice(possibleColours)
+        r = randint(50, 130)
+        cw = animatedCircleWidget(colour, r)
+        cw.setParent(self)
+        return cw
+
+    def createAnimatedColourWidget(self):
+        cw = self.generateAnimatedColourWidget()
+        startPos = qtc.QPoint(
+            self.width() // 2 - cw.width() // 2, self.height() // 2 - cw.height() // 2
+        )
+        cw.move(startPos)
+        # choose a random position on the edge of the screen
+        if choice([True, False]):
+            # top or bottom
+            x = randint(0, self.width())
+            y = choice([-cw.height(), self.height()])
+        else:
+            # left or right
+            x = choice([-cw.width(), self.width()])
+            y = randint(0, self.height())
+        endPos = qtc.QPoint(x, y)
+        cw.setAnimationLocations(startPos, endPos)
+        # randomly generate the duration
+        duration = randint(3000, 10000)
+        cw.setAnimationDuration(duration)
+        # when the animation is finished, create a new widget
+        cw.animation.finished.connect(self.createAnimatedColourWidget)
+        # start the animation
+        cw.lower()
+        cw.show()
+        cw.startAnimation()
+
+
+class stackedWidget(qtw.QStackedWidget):
+    """
+    A class that creates a stacked widget.
+    Its max size is the size of the screen multiplied by a given scale factor.
+    """
+
+    def __init__(self, scaleFactor: float = 0.7):
+        super().__init__()
+        # get the screen size
+        screenSize = qtw.QApplication.primaryScreen().size()
+        self.setFixedSize(screenSize * scaleFactor)
+        # set the background colour without affecting the child widgets
+        self.setAutoFillBackground(True)
+        palette = self.palette()
+        palette.setColor(qtg.QPalette.ColorRole.Window, qtg.QColor("#f0f0f0"))
+        self.setPalette(palette)
+
+
+class mainWidget(qtw.QWidget):
+    """
+    A class that creates the main widget.
+    It contains a stackedWidget and a centreSpawningWidget.
+    """
+
+    def __init__(self):
+        super().__init__()
+        # get the screen size
+        screenSize = qtw.QApplication.primaryScreen().size()
+        self.setFixedSize(screenSize)
+        # create the centre spawning widget
+        self.centreSpawningWidget = centreSpawningWidget()
+        self.centreSpawningWidget.setParent(self)
+        self.centreSpawningWidget.show()
+        # create the stacked widget
+        self.stackedWidget = stackedWidget()
+        self.stackedWidget.setParent(self)
+        # move the stacked widget to the centre of the screen
+        self.stackedWidget.move(
+            self.width() // 2 - self.stackedWidget.width() // 2,
+            self.height() // 2 - self.stackedWidget.height() // 2,
+        )
+        self.stackedWidget.show()
 
 
 class gameModes(Enum):

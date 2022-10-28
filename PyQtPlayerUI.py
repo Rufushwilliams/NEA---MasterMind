@@ -11,7 +11,7 @@ class pegWidget(qtw.QFrame):
             self.setFixedSize(50, 50)
         else:
             self.setFixedSize(100, 100)
-        self.borderRadius = self.width() / 2
+        self.borderRadius = self.width() // 2
         self.updatePeg(colour, value)
 
     def setColour(self, colour):

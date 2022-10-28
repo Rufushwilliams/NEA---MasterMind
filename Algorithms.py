@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from itertools import cycle, permutations, product
+from itertools import permutations, product
 from random import choice, sample
+from typing import Generator, Iterable
 
 
 class Algorithm(ABC):
@@ -86,11 +87,23 @@ class RandomConsistent(Algorithm):
             x = [i for i in self._colourOptions for _ in range(2)]
         else:
             x = self._colourOptions.copy()
-        y = cycle(x)
+        y = self._cycle(x)
         guess = []
         for _ in range(self._lengthOfCode):
             guess.append(next(y))
         return guess
+
+    def _cycle(self, iterable: Iterable) -> Generator:
+        """
+        Takes an iterable and returns a generator that repeatedly cycles through it.
+        """
+        saved = []
+        for element in iterable:
+            yield element
+            saved.append(element)
+        while saved:
+            for element in saved:
+                yield element
 
     def _genNextGuess(self) -> list[int]:
         """
