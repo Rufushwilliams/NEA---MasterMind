@@ -503,9 +503,3 @@ class gameWidget(qtw.QWidget):
         primaryLayout.addLayout(fnButtonLayout, 1, 5, 1, 3)
         primaryLayout.addWidget(self.messageWidget, 2, 5, 3, 3)
         self.setLayout(primaryLayout)
-
-
-############################
-# TODO: TIDY UP WHOLE FILE #
-# TODO: ORGANISE CODE      #
-############################

@@ -1,9 +1,11 @@
 from enum import Enum
+from dataclasses import fields
 from typing import Callable
 from random import choice, randint
 from PyQt6 import QtWidgets as qtw
 from PyQt6 import QtGui as qtg
 from PyQt6 import QtCore as qtc
+from DataBaseManager import Statistics
 
 
 class LoginPage(qtw.QWidget):
@@ -162,41 +164,6 @@ class JoinOnlineMultiplayerPage(qtw.QWidget):
         self.backButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.backButton)
 
-    # def showLoginError(self):
-    #     error = qtw.QMessageBox()
-    #     error.setIcon(qtw.QMessageBox.Icon.Critical)
-    #     error.setText("Incorrect username or password")
-    #     error.setWindowTitle("Error")
-    #     error.exec()
-    #     self.portEnter.clear()
-
-    # def showLoginSuccess(self):
-    #     success = qtw.QMessageBox()
-    #     success.setIcon(qtw.QMessageBox.Icon.Information)
-    #     success.setText("Logged in!")
-    #     success.setWindowTitle("Success")
-    #     success.exec()
-    #     self.hostEnter.clear()
-    #     self.portEnter.clear()
-
-    # def showRegisterError(self):
-    #     error = qtw.QMessageBox()
-    #     error.setIcon(qtw.QMessageBox.Icon.Critical)
-    #     error.setText("Username already taken")
-    #     error.setWindowTitle("Error")
-    #     error.exec()
-    #     self.hostEnter.clear()
-    #     self.portEnter.clear()
-
-    # def showRegisterSuccess(self):
-    #     success = qtw.QMessageBox()
-    #     success.setIcon(qtw.QMessageBox.Icon.Information)
-    #     success.setText("Registered!")
-    #     success.setWindowTitle("Success")
-    #     success.exec()
-    #     self.hostEnter.clear()
-    #     self.portEnter.clear()
-
     def updateHostText(self, text: str):
         self.hostText = text
 
@@ -240,6 +207,11 @@ class WelcomePage(qtw.QWidget):
         self.rulesButton.setFixedHeight(50)
         self.rulesButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.rulesButton)
+        self.leaderboardButton = qtw.QPushButton("View Leaderboard")
+        self.leaderboardButton.setFixedWidth(300)
+        self.leaderboardButton.setFixedHeight(50)
+        self.leaderboardButton.setFont(qtg.QFont("Times", 20))
+        self.layout().addWidget(self.leaderboardButton)
         self.startButton = qtw.QPushButton("Start")
         self.startButton.setFixedWidth(300)
         self.startButton.setFixedHeight(50)
@@ -254,6 +226,15 @@ class WelcomePage(qtw.QWidget):
             pass
         for func in args:
             self.rulesButton.clicked.connect(func)
+
+    def bindLeaderboardButton(self, *args: Callable):
+        try:
+            while True:
+                self.leaderboardButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.leaderboardButton.clicked.connect(func)
 
     def bindStartButton(self, *args: Callable):
         try:
@@ -432,6 +413,147 @@ class ReadyPage(qtw.QWidget):
             pass
         for func in args:
             self.backButton.clicked.connect(func)
+
+
+class LeaderBoardPage(qtw.QWidget):
+    """
+    A page that displays the leaderboard.
+    The leaderboard should be passed in as a list of Statistics objects.
+    These objects are in the order of display.
+    The logged in player's stats are displayed at the top.
+    The logged in player's statistics object should be passed in along with their position.
+    """
+
+    def __init__(self, leaderBoard: list[Statistics], player: tuple[Statistics, int]):
+        super().__init__()
+        self.setLayout(qtw.QVBoxLayout())
+        self.layout().setAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
+        txt = qtw.QLabel("Leaderboard")
+        txt.setFont(qtg.QFont("Times", 36))
+        self.layout().addWidget(txt)
+        self.leaderBoard = LeaderBoard(leaderBoard, player)
+        self.layout().addWidget(scrollArea(self.leaderBoard))
+        self.backButton = qtw.QPushButton("Back")
+        self.backButton.setFixedWidth(300)
+        self.backButton.setFixedHeight(50)
+        self.backButton.setFont(qtg.QFont("Times", 20))
+        self.layout().addWidget(self.backButton)
+
+    def updateLeaderBoard(
+        self, leaderBoard: list[Statistics], player: tuple[Statistics, int]
+    ):
+        self.leaderBoard.updateLeaderBoard(leaderBoard, player)
+
+    def bindBackButton(self, *args: Callable):
+        try:
+            while True:
+                self.backButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.backButton.clicked.connect(func)
+
+
+class LeaderBoardTop(qtw.QWidget):
+    """
+    A widget that displays the top of the leaderboard.
+    """
+
+    def __init__(self, fieldNames: list[str], parse: bool = False):
+        super().__init__()
+        self.setLayout(qtw.QHBoxLayout())
+        self.layout().setSpacing(0)
+        self.layout().addWidget(LeaderBoardField("Position"))
+        for field in fieldNames:
+            fieldName = field
+            if parse:
+                fieldName = ""
+                for char in field:
+                    if char.isupper():
+                        fieldName += " "
+                    fieldName += char
+                fieldName = fieldName.title()
+            self.layout().addWidget(LeaderBoardField(fieldName))
+        self.setFixedSize(self.sizeHint())
+
+
+class LeaderBoardEntry(qtw.QWidget):
+    """
+    A widget that displays a single entry on the leaderboard.
+    """
+
+    def __init__(
+        self, player: Statistics, position: int | str, highlight: bool = False
+    ):
+        super().__init__()
+        self.setLayout(qtw.QHBoxLayout())
+        self.layout().setSpacing(0)
+        self.layout().addWidget(LeaderBoardField(f"{position}"))
+        for field in fields(player):
+            self.layout().addWidget(LeaderBoardField(f"{getattr(player, field.name)}"))
+        if highlight:
+            self.setStyleSheet("background-color: #00ff00;")
+        self.setFixedSize(self.sizeHint())
+
+
+class LeaderBoardField(qtw.QLabel):
+    """
+    A field on the leaderboard.
+    """
+
+    def __init__(self, value: str):
+        super().__init__(f"{value}")
+        self.setAlignment(
+            qtc.Qt.AlignmentFlag.AlignHCenter | qtc.Qt.AlignmentFlag.AlignVCenter
+        )
+        self.setStyleSheet("border: 1px solid; padding: 5px; margin: 0px;")
+        self.setFont(qtg.QFont("Arial", 14, qtg.QFont.Weight.Bold))
+        self.setFixedSize(150, 50)
+
+
+class LeaderBoard(qtw.QWidget):
+    """
+    A widget that displays the leaderboard.
+    players should be a list of the Statistics objects of the players.
+    It should be in the correct order.
+    The current player can be passed in as a tuple of the Statistics object and their position.
+    This will highlight their entry.
+    """
+
+    def __init__(
+        self, players: list[Statistics], currPlayer: tuple[Statistics, int] = None
+    ):
+        super().__init__()
+        self.setLayout(qtw.QVBoxLayout())
+        self.layout().setSpacing(0)
+        self.setLeaderBoard(players, currPlayer)
+
+    def setLeaderBoard(
+        self, players: list[Statistics], currPlayer: tuple[Statistics, int] = None
+    ):
+        self.layout().addWidget(
+            LeaderBoardTop([field.name for field in fields(players[0])], True)
+        )
+        for i, player in enumerate(players):
+            if currPlayer and currPlayer[0] == player:
+                currPlayer = None
+                self.layout().addWidget(LeaderBoardEntry(player, i + 1, True))
+            else:
+                self.layout().addWidget(LeaderBoardEntry(player, i + 1))
+        if currPlayer:
+            self.layout().addWidget(
+                LeaderBoardEntry(currPlayer[0], currPlayer[1], True)
+            )
+        self.setFixedSize(self.sizeHint())
+
+    def updateLeaderBoard(
+        self, players: list[Statistics], currPlayer: tuple[Statistics, int] = None
+    ):
+        while self.layout().count():
+            child = self.layout().takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        self.setLeaderBoard(players, currPlayer)
 
 
 class sliderOptionWidget(qtw.QWidget):
@@ -740,6 +862,32 @@ class mainWidget(qtw.QWidget):
             self.height() // 2 - self.stackedWidget.height() // 2,
         )
         self.stackedWidget.show()
+
+
+class scrollArea(qtw.QScrollArea):
+    def __init__(self, widget: qtw.QWidget):
+        super().__init__()
+        self.setFrameShape(qtw.QFrame.Shape.NoFrame)
+        self.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.setWidget(widget)
+
+    def wheelEvent(self, event: qtg.QWheelEvent):
+        """
+        Handles mouse wheel events.
+        """
+        # get the correct scrollbar depending on if the shift key is pressed
+        scrollbar = self.verticalScrollBar()
+        if event.modifiers() == qtc.Qt.KeyboardModifier.ShiftModifier:
+            scrollbar = self.horizontalScrollBar()
+        # get the direction of scroll
+        action = qtw.QAbstractSlider.SliderAction.SliderSingleStepAdd
+        if event.angleDelta().y() > 0:
+            action = qtw.QAbstractSlider.SliderAction.SliderSingleStepSub
+        # scroll the scrollbar
+        scrollbar.triggerAction(action)
+        scrollbar.triggerAction(action)
+        scrollbar.triggerAction(action)
 
 
 class gameModes(Enum):

@@ -104,6 +104,10 @@ class GUI(UI):
         self.loginPage = qtui.LoginPage()
         self.welcomePage = qtui.WelcomePage()
         self.rulesPage = qtui.RulesPage()
+        self.leaderBoardPage = qtui.LeaderBoardPage(
+            [self._dbm.createEmptyStatsTable("")],
+            (self._dbm.createEmptyStatsTable(""), 1),
+        )
         self.modePage = qtui.ModePage()
         self.readyPage = qtui.ReadyPage()
         self.advancedSetupPage = qtui.AdvancedSetupPage(
@@ -120,6 +124,7 @@ class GUI(UI):
         self.mainWidget.addWidget(self.loginPage)
         self.mainWidget.addWidget(self.welcomePage)
         self.mainWidget.addWidget(self.rulesPage)
+        self.mainWidget.addWidget(self.leaderBoardPage)
         self.mainWidget.addWidget(self.modePage)
         self.mainWidget.addWidget(self.readyPage)
         self.mainWidget.addWidget(self.advancedSetupPage)
@@ -128,8 +133,10 @@ class GUI(UI):
         # Setup the buttons on the pages
         self.__setupLoginPage(self.showWelcomePage)
         self.welcomePage.bindRulesButton(self.showRulesPage)
+        self.welcomePage.bindLeaderboardButton(self.showLeaderBoardPage)
         self.welcomePage.bindStartButton(self.showModePage)
         self.rulesPage.bindBackButton(self.showWelcomePage)
+        self.leaderBoardPage.bindBackButton(self.showWelcomePage)
         self.__setupModePage()
         self.readyPage.bindStartButton(self.initGame)
         self.readyPage.bindAdvancedSetupButton(self.showAdvancedSetupPage)
@@ -214,6 +221,10 @@ class GUI(UI):
     def showRulesPage(self):
         self.mainWidget.setCurrentWidget(self.rulesPage)
 
+    def showLeaderBoardPage(self):
+        self.updateLeaderBoard()
+        self.mainWidget.setCurrentWidget(self.leaderBoardPage)
+
     def showModePage(self):
         self.mainWidget.setCurrentWidget(self.modePage)
 
@@ -225,6 +236,15 @@ class GUI(UI):
 
     def showJoinOnlineMultiplayerPage(self):
         self.mainWidget.setCurrentWidget(self.joinOnlineMultiplayerPage)
+
+    def updateLeaderBoard(self):
+        """
+        Updates the leader board page with the current leaderboard.
+        Uses the dbm to get the leaderboard.
+        """
+        playerStats = self.player1.getStats()
+        player = (playerStats, self._dbm.getPlayerPosition(playerStats.username))
+        self.leaderBoardPage.updateLeaderBoard(self._dbm.getLeaderboard(10), player)
 
     def setMode(self, mode: qtui.gameModes, start: bool = False, show: bool = True):
         self._mode = mode

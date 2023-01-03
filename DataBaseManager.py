@@ -127,10 +127,49 @@ class dataBaseManager:
                     stats.draws,
                     stats.totalGames,
                     stats.roundsPlayed,
-                    stats.timePlayed,
+                    round(stats.timePlayed, 2),
                     stats.username,
                 ),
             )
+
+    def getPlayerPosition(self, username: str) -> int:
+        """
+        Returns the position of the player in the leaderboard.
+        The leaderboard is sorted by wins, then losses, then time played.
+        """
+        with openDB(self.db) as cur:
+            # count the number of players with more wins than the player
+            # select all players with the same number of wins as the player
+            # count the number of players with less losses than the player from the previous selection
+            # select all players with the same number of wins and losses as the player
+            # count the number of players with more time played than the player from the previous selection
+            # add up these values plus one to get the position
+            cur.execute(
+                """
+                SELECT
+                (SELECT COUNT(*) FROM users WHERE wins > (SELECT wins FROM users WHERE username = ?)) +
+                (SELECT COUNT(*) FROM users WHERE wins = (SELECT wins FROM users WHERE username = ?) AND losses < (SELECT losses FROM users WHERE username = ?)) +
+                (SELECT COUNT(*) FROM users WHERE wins = (SELECT wins FROM users WHERE username = ?) AND losses = (SELECT losses FROM users WHERE username = ?) AND timePlayed > (SELECT timePlayed FROM users WHERE username = ?)) + 1
+                """,
+                (username,) * 6,
+            )
+            position = cur.fetchone()
+        return position[0]
+
+    def getLeaderboard(self, numPlayers: int) -> list[Statistics]:
+        """
+        Gets the leaderboard for the given number of players.
+        Returns a list of the Statistics objects for the players sorted by wins.
+        If wins are equal, the player with the least losses is higher.
+        If losses are equal, the player with the highest time played is higher.
+        """
+        with openDB(self.db) as cur:
+            cur.execute(
+                "SELECT username, wins, losses, draws, totalGames, roundsPlayed, timePlayed FROM users ORDER BY wins DESC, losses ASC, timePlayed DESC LIMIT ?",
+                (numPlayers,),
+            )
+            stats = cur.fetchall()
+        return [Statistics(*stat) for stat in stats]
 
     def savePastGame(
         self,

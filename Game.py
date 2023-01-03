@@ -212,6 +212,6 @@ class Game:
             self.__winner = None
         self.displayWinner()
         endTime = time()
-        self.__gameTime = endTime - startTime
+        self.__gameTime = round(endTime - startTime, 2)
         self.updatePlayerStats(self.__gameTime)
         return (self.__gameTime, self.__winner == self.__player1)
