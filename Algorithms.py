@@ -184,11 +184,40 @@ class Knuths(RandomConsistent):
         guesses = []
         for guess, _ in possibleGuesses:
             guesses.append(guess)
-        guesses.sort()
+        guesses = self._mergeSort(guesses)
         for guess in guesses:
             if guess in self._S:
                 return list(guess)
         return list(guesses[0])
+
+    def _mergeSort(self, l: list) -> list:
+        """
+        A function that sorts a list using the mergesort algorithm.
+        """
+        # basis case
+        if len(l) == 1:
+            return l
+        # find the middle of the list
+        midPoint = len(l) // 2
+        # split the list into two halves
+        lHalf = l[:midPoint]
+        rHalf = l[midPoint:]
+        # recursively sort the two halves
+        lHalf = self._mergeSort(lHalf)
+        rHalf = self._mergeSort(rHalf)
+        # merge the two halves
+        newList = []
+        while len(lHalf) > 0 and len(rHalf) > 0:
+            if lHalf[0] < rHalf[0]:
+                newList.append(lHalf.pop(0))
+            else:
+                newList.append(rHalf.pop(0))
+        # add the remaining elements to the list
+        if len(lHalf) > 0:
+            newList += lHalf
+        if len(rHalf) > 0:
+            newList += rHalf
+        return newList
 
     def __calcScore(self, guess: list[int]) -> tuple[tuple[int], int]:
         """
