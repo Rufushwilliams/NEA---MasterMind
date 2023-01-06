@@ -27,6 +27,10 @@ class pegWidget(qtw.QFrame):
         self.value = value
         self.setColour(colour)
 
+    def getColourValue(self) -> tuple[str, int]:
+        """Returns a tuple of the colour and value of the peg"""
+        return self.colour, self.value
+
 
 class resultWidget(qtw.QWidget):
     def __init__(self, lenOfGuess: int, result: list[int]):
@@ -350,6 +354,7 @@ class pegInputGenerator(qtc.QObject):
         self.__lenOfGuess = self.widget.lenOfGuess
         self.__colourMapping = self.widget.colourMapping
         self.__pegPointer = 0
+        self.__stack = []
         self.initWidget()
 
     def initWidget(self):
@@ -365,15 +370,23 @@ class pegInputGenerator(qtc.QObject):
             self.pegButtons.append(button)
 
         self.fnButtons = {}
+        buttonu = qtw.QPushButton("Undo")
+        buttonu.clicked.connect(self.onUndo)
         buttonc = qtw.QPushButton("Clear")
         buttonc.clicked.connect(self.onClear)
         buttonf = buttonSubmit("Submit")
         buttonf.addCommand(lambda: self.getValues(self.__duplicatesAllowed))
+        self.fnButtons["Undo"] = buttonu
         self.fnButtons["Clear"] = buttonc
         self.fnButtons["Submit"] = buttonf
 
     def onClick(self, colour: str, value: int):
-        # find the first peg that is not black and replace it with the colour
+        """
+        Changes the colour of the peg that is currently selected.
+        """
+        # add the current state of the peg to the stack
+        self.__addMoveToStack(self.pegs[self.__pegPointer].getColourValue())
+        # find the next peg using the pegPointer and replace it with the colour
         self.pegs[self.__pegPointer].updatePeg(colour, value)
         self.__updatePegPointer()
         self.widget.update()
@@ -384,13 +397,37 @@ class pegInputGenerator(qtc.QObject):
         else:
             self.__pegPointer = 0
 
+    def __addMoveToStack(self, oldColour: str, oldValue: int):
+        self.__stack.append((self.__pegPointer, oldColour, oldValue))
+
+    def __addClearToStack(self):
+        # add the current state of the pegs to the stack
+        pegColourValues = []
+        for peg in self.pegs:
+            pegColourValues.append(peg.getColourValue())
+        self.__stack.append((self.__pegPointer, pegColourValues))
+
     def __clearButtonBindings(self):
         for button in self.pegButtons:
             button.clicked.disconnect()
         for button in self.fnButtons.values():
             button.clicked.disconnect()
 
+    def onUndo(self):
+        # undo the last move
+        if len(self.__stack) > 0:
+            move = self.__stack.pop()
+            if len(move) == 3:
+                self.__pegPointer, oldColour, oldValue = move
+                self.pegs[self.__pegPointer].updatePeg(oldColour, oldValue)
+            elif len(move) == 2:
+                self.__pegPointer, pegColourValues = move
+                for peg, colourValue in zip(self.pegs, pegColourValues):
+                    peg.updatePeg(*colourValue)
+            self.widget.update()
+
     def onClear(self):
+        self.__addClearToStack()
         self.__pegPointer = 0
         for peg in self.pegs:
             peg.updatePeg(self.__colourMapping[0], 0)
