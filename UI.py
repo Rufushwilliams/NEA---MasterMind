@@ -110,7 +110,12 @@ class GUI(UI):
         )
         self.modePage = qtui.ModePage()
         self.readyPage = qtui.ReadyPage()
-        self.advancedSetupPage = qtui.AdvancedSetupPage(
+        # to create the advanced setup page, we need a real page, and a virtual page
+        # this is because we need to be able to scroll the page
+        # the virtual page is the page that is embedded in the scroll area
+        # the real page is the scroll area -> this must be used to show the page
+        # the virtual page must be used to get the values from the page
+        self.virtualAdvancedSetupPage = qtui.AdvancedSetupPage(
             self._length,
             self._numGuesses,
             self._duplicatesAllowed,
@@ -119,6 +124,7 @@ class GUI(UI):
             self.ALGORITHMTYPES,
             self._computerAlgorithmType,
         )
+        self.realAdvancedSetupPage = qtui.scrollArea(self.virtualAdvancedSetupPage)
         self.joinOnlineMultiplayerPage = qtui.JoinOnlineMultiplayerPage()
         # Add all the pages to the main widget
         self.mainWidget.addWidget(self.loginPage)
@@ -127,7 +133,7 @@ class GUI(UI):
         self.mainWidget.addWidget(self.leaderBoardPage)
         self.mainWidget.addWidget(self.modePage)
         self.mainWidget.addWidget(self.readyPage)
-        self.mainWidget.addWidget(self.advancedSetupPage)
+        self.mainWidget.addWidget(self.realAdvancedSetupPage)
         self.mainWidget.addWidget(self.joinOnlineMultiplayerPage)
 
         # Setup the buttons on the pages
@@ -141,7 +147,7 @@ class GUI(UI):
         self.readyPage.bindStartButton(self.initGame)
         self.readyPage.bindAdvancedSetupButton(self.showAdvancedSetupPage)
         self.readyPage.bindBackButton(self.showModePage)
-        self.advancedSetupPage.bindConfirmButton(
+        self.virtualAdvancedSetupPage.bindConfirmButton(
             lambda: self.setValuesFromAdvanced(), lambda: self.showReadyPage()
         )
         self.joinOnlineMultiplayerPage.bindJoinGameButton(
@@ -232,7 +238,7 @@ class GUI(UI):
         self.mainWidget.setCurrentWidget(self.readyPage)
 
     def showAdvancedSetupPage(self):
-        self.mainWidget.setCurrentWidget(self.advancedSetupPage)
+        self.mainWidget.setCurrentWidget(self.realAdvancedSetupPage)
 
     def showJoinOnlineMultiplayerPage(self):
         self.mainWidget.setCurrentWidget(self.joinOnlineMultiplayerPage)
@@ -254,7 +260,7 @@ class GUI(UI):
             self.showReadyPage()
 
     def setValuesFromAdvanced(self):
-        values = self.advancedSetupPage.readOptionValues()
+        values = self.virtualAdvancedSetupPage.readOptionValues()
         self._length = values["length"]
         self._numGuesses = values["numGuesses"]
         self._duplicatesAllowed = values["duplicatesAllowed"]
