@@ -1,4 +1,4 @@
-from random import sample, choice
+from random import choice, sample
 
 
 class Board:
@@ -20,6 +20,9 @@ class Board:
         self.__colourNums = [i for i in range(1, colourNum + 1)]
         self.__resultNums = resultNums
         self.__guessPointer = 0
+        ###########################################
+        # GROUP B SKILL: MULTI-DIMENSIONAL ARRAYS #
+        ###########################################
         self.__guesses: list[list[int | None]] = [
             [None for _ in range(length)] for _ in range(totalGuesses)
         ]

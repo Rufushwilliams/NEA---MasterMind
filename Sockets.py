@@ -1,10 +1,14 @@
 from __future__ import annotations
-from abc import ABC
-from enum import Enum
+
 import pickle
 import socket
+from abc import ABC
+from enum import Enum
 
 
+#####################
+# CUSTOM EXCEPTIONS #
+#####################
 class MessageExchangeError(Exception):
     """
     An exception for errors in message exchange.
@@ -26,6 +30,9 @@ class SocketManager(ABC):
     An abstract class for handling sockets
     """
 
+    ##############################################
+    # GROUP A SKILL: COMPLEX CLIENT-SERVER MODEL #
+    ##############################################
     def __init__(self, host: str, port: int):
         self.host = host
         self.port = port

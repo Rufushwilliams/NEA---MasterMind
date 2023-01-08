@@ -1,7 +1,8 @@
 from typing import Callable
-from PyQt6 import QtWidgets as qtw
-from PyQt6 import QtGui as qtg
+
 from PyQt6 import QtCore as qtc
+from PyQt6 import QtGui as qtg
+from PyQt6 import QtWidgets as qtw
 
 
 class pegWidget(qtw.QFrame):

@@ -1,10 +1,12 @@
-from enum import Enum
 from dataclasses import fields
-from typing import Callable
+from enum import Enum
 from random import choice, randint
-from PyQt6 import QtWidgets as qtw
-from PyQt6 import QtGui as qtg
+from typing import Callable
+
 from PyQt6 import QtCore as qtc
+from PyQt6 import QtGui as qtg
+from PyQt6 import QtWidgets as qtw
+
 from DataBaseManager import Statistics
 
 

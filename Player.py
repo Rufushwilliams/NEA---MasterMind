@@ -1,13 +1,16 @@
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from random import choice, sample
-from PyQt6 import QtWidgets as qtw
+
 from PyQt6 import QtCore as qtc
-from PyQtPlayerUI import gameWidget, SignalsGUI, loopSpinner
-from DataBaseManager import Statistics
-from Board import Board
-from Sockets import SocketManager, MessageExchangeError, NoMessageError
+from PyQt6 import QtWidgets as qtw
+
 import Algorithms as alg
+from Board import Board
+from DataBaseManager import Statistics
+from PyQtPlayerUI import SignalsGUI, gameWidget, loopSpinner
+from Sockets import MessageExchangeError, NoMessageError, SocketManager
 
 
 class Player(ABC):
@@ -383,6 +386,9 @@ class GUI(Player):
         """
         Generates a mapping of colours to numbers
         """
+        ###############################
+        # GROUP B SKILL: DICTIONARIES #
+        ###############################
         colourMapping = {
             0: "#000000",
             1: "#FF0000",
@@ -485,6 +491,11 @@ class GUI(Player):
         self.__mainWindow.setCentralWidget(self.__mainWidget)
 
 
+##############################################
+# GROUP A SKILL: COMPLEX CLIENT-SERVER MODEL #
+##############################################
+
+
 class serverPlayer(Player, SocketManager):
     """
     This class will be used to create a server which will host a game
@@ -574,6 +585,9 @@ class clientPlayer(GUI, SocketManager):
             try:
                 msg, data = self.receiveMessage()
             except NoMessageError:
+                ######################
+                # EXCEPTION HANDLING #
+                ######################
                 continue
             if msg == self.possibleMessages.GET_MOVE:
                 move = self.getMove(data[0])

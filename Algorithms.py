@@ -194,6 +194,9 @@ class Knuths(RandomConsistent):
         """
         A function that sorts a list using the mergesort algorithm.
         """
+        ############################
+        # GROUP A SKILL: MERGESORT #
+        ############################
         # basis case
         if len(l) == 1:
             return l

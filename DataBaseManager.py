@@ -1,9 +1,10 @@
 from __future__ import annotations
+
+import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
 from hashlib import sha256
 from time import strftime
-import sqlite3
 
 
 @contextmanager
@@ -11,6 +12,9 @@ def openDB(db: str) -> sqlite3.Cursor:
     """
     A context manager that yields the db cursor and commits the changes.
     """
+    ######################
+    # EXCEPTION HANDLING #
+    ######################
     conn = sqlite3.connect(db)
     try:
         cur = conn.cursor()
@@ -24,6 +28,10 @@ class dataBaseManager:
     """
     A class that contains functions required to interact with the statistics database
     """
+
+    ########################################
+    # GROUP B SKILL: SIMPLE DATABASE MODEL #
+    ########################################
 
     def __init__(self, db: str):
         self.db = db
@@ -65,6 +73,9 @@ class dataBaseManager:
         Takes a username and password and adds them to the database.
         Returns True if the registration works, False if the username is already taken
         """
+        ##########################
+        # GROUP A SKILL: HASHING #
+        ##########################
         # hash the password
         hashedPassword = sha256(password.encode()).hexdigest()
         try:
@@ -76,6 +87,9 @@ class dataBaseManager:
                 )
             return True
         except sqlite3.IntegrityError:  # if the username is already taken
+            ######################
+            # EXCEPTION HANDLING #
+            ######################
             return False
 
     def login(self, username: str, password: str) -> bool:
@@ -139,6 +153,9 @@ class dataBaseManager:
         The leaderboard is sorted by wins, then losses, then time played.
         """
         with openDB(self.db) as cur:
+            ##########################################
+            # GROUP A SKILL: AGGREGATE SQL FUNCTIONS #
+            ##########################################
             # count the number of players with more wins than the player
             # select all players with the same number of wins as the player
             # count the number of players with less losses than the player from the previous selection

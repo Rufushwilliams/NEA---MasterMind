@@ -1,6 +1,8 @@
 from sys import argv
-from PyQt6.QtWidgets import QApplication
+
 from PyQt6.QtCore import QTimer
+from PyQt6.QtWidgets import QApplication
+
 from UI import GUI, Terminal
 
 

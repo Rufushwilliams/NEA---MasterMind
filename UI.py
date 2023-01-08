@@ -1,13 +1,15 @@
-from typing import Callable, Type
-from abc import ABC, abstractmethod
 import threading
+from abc import ABC, abstractmethod
+from typing import Callable, Type
+
 from PyQt6 import QtWidgets as qtw
 from PyQt6.QtCore import QTimer
+
+import Algorithms as alg
+import Player as pl
 import PyQtMainUI as qtui
 from DataBaseManager import dataBaseManager
 from Game import Game
-import Algorithms as alg
-import Player as pl
 
 
 class ResultThread(threading.Thread):

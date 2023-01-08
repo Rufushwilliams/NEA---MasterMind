@@ -1,6 +1,7 @@
 from time import time
-from Player import Player, Terminal
+
 from Board import Board
+from Player import Player, Terminal
 
 
 class Game:
