@@ -93,7 +93,7 @@ class mysteryPegWidget(qtw.QFrame):
     def setColour(self, colour):
         self.colour = colour
         if colour == self.defaultColour:
-            # add QUESTION MARK
+            # TODO: add QUESTION MARK
             pass
         self.updateStyleSheet()
 
@@ -105,6 +105,10 @@ class mysteryPegWidget(qtw.QFrame):
     def updatePeg(self, colour, value: int):
         self.value = value
         self.setColour(colour)
+
+    def getColourValue(self) -> tuple[str, int]:
+        """Returns a tuple of the colour and value of the peg"""
+        return self.colour, self.value
 
 
 class hiddenCodeWidget(qtw.QWidget):
@@ -380,12 +384,18 @@ class pegInputGenerator(qtc.QObject):
         self.fnButtons["Clear"] = buttonc
         self.fnButtons["Submit"] = buttonf
 
+    def __clearButtonBindings(self):
+        for button in self.pegButtons:
+            button.clicked.disconnect()
+        for button in self.fnButtons.values():
+            button.clicked.disconnect()
+
     def onClick(self, colour: str, value: int):
         """
         Changes the colour of the peg that is currently selected.
         """
         # add the current state of the peg to the stack
-        self.__addMoveToStack(self.pegs[self.__pegPointer].getColourValue())
+        self.__addMoveToStack(*self.pegs[self.__pegPointer].getColourValue())
         # find the next peg using the pegPointer and replace it with the colour
         self.pegs[self.__pegPointer].updatePeg(colour, value)
         self.__updatePegPointer()
@@ -397,6 +407,10 @@ class pegInputGenerator(qtc.QObject):
         else:
             self.__pegPointer = 0
 
+    ###################################
+    # GROUP A SKILL: STACK OPERATIONS #
+    ###################################
+
     def __addMoveToStack(self, oldColour: str, oldValue: int):
         self.__stack.append((self.__pegPointer, oldColour, oldValue))
 
@@ -406,12 +420,6 @@ class pegInputGenerator(qtc.QObject):
         for peg in self.pegs:
             pegColourValues.append(peg.getColourValue())
         self.__stack.append((self.__pegPointer, pegColourValues))
-
-    def __clearButtonBindings(self):
-        for button in self.pegButtons:
-            button.clicked.disconnect()
-        for button in self.fnButtons.values():
-            button.clicked.disconnect()
 
     def onUndo(self):
         # undo the last move
