@@ -125,7 +125,8 @@ class GUI(UI):
             self._computerAlgorithmType,
         )
         self.realAdvancedSetupPage = qtui.scrollArea(self.virtualAdvancedSetupPage)
-        self.joinOnlineMultiplayerPage = qtui.JoinOnlineMultiplayerPage()
+        self.joinOnlineMultiplayerPage = qtui.OnlineMultiplayerPage("Join Game")
+        self.hostOnlineMultiplayerPage = qtui.OnlineMultiplayerPage("Host Game")
         # Add all the pages to the main widget
         self.mainWidget.addWidget(self.loginPage)
         self.mainWidget.addWidget(self.welcomePage)
@@ -135,6 +136,7 @@ class GUI(UI):
         self.mainWidget.addWidget(self.readyPage)
         self.mainWidget.addWidget(self.realAdvancedSetupPage)
         self.mainWidget.addWidget(self.joinOnlineMultiplayerPage)
+        self.mainWidget.addWidget(self.hostOnlineMultiplayerPage)
 
         # Setup the buttons on the pages
         self.__setupLoginPage(self.showWelcomePage)
@@ -150,13 +152,15 @@ class GUI(UI):
         self.virtualAdvancedSetupPage.bindConfirmButton(
             lambda: self.setValuesFromAdvanced(), lambda: self.showReadyPage()
         )
-        self.joinOnlineMultiplayerPage.bindJoinGameButton(
+        self.joinOnlineMultiplayerPage.bindConfirmButton(
             lambda: self.joinGame(
                 host=self.joinOnlineMultiplayerPage.getHost(),
                 port=int(self.joinOnlineMultiplayerPage.getPort()),
             )
         )
         self.joinOnlineMultiplayerPage.bindBackButton(self.showModePage)
+        self.hostOnlineMultiplayerPage.bindConfirmButton(self.showReadyPage)
+        self.hostOnlineMultiplayerPage.bindBackButton(self.showModePage)
 
     def __setupLoginPage(
         self,
@@ -205,9 +209,9 @@ class GUI(UI):
                 self.showLoginPage(),
             )
         )
-        # TODO: MAKE IT SO YOU CAN CHOOSE THE HOST AND PORT
         self.modePage.bindHostOnlineMultiplayerButton(
-            lambda: self.setMode(qtui.gameModes.HOST_ONLINE_MULTIPLAYER),
+            lambda: self.setMode(qtui.gameModes.HOST_ONLINE_MULTIPLAYER, show=False),
+            lambda: self.showHostOnlineMultiplayerPage(),
         )
         self.modePage.bindJoinOnlineMultiplayerButton(
             lambda: self.setMode(qtui.gameModes.JOIN_ONLINE_MULTIPLAYER, show=False),
@@ -242,6 +246,9 @@ class GUI(UI):
 
     def showJoinOnlineMultiplayerPage(self):
         self.mainWidget.setCurrentWidget(self.joinOnlineMultiplayerPage)
+
+    def showHostOnlineMultiplayerPage(self):
+        self.mainWidget.setCurrentWidget(self.hostOnlineMultiplayerPage)
 
     def updateLeaderBoard(self):
         """
@@ -326,9 +333,8 @@ class GUI(UI):
         elif self._mode == qtui.gameModes.LOCAL_MULTIPLAYER:
             pass
         elif self._mode == qtui.gameModes.HOST_ONLINE_MULTIPLAYER:
-            # TODO: Make it so you can choose the host and port
-            HOST = "127.0.0.1"
-            PORT = 65432
+            HOST = self.hostOnlineMultiplayerPage.getHost()
+            PORT = int(self.hostOnlineMultiplayerPage.getPort())
             self.player2 = pl.serverPlayer(
                 HOST, PORT, self._dbm.createEmptyStatsTable("Server")
             )

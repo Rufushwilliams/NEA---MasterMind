@@ -129,8 +129,9 @@ class LoginPage(qtw.QWidget):
             self.backButton.clicked.connect(func)
 
 
-class JoinOnlineMultiplayerPage(qtw.QWidget):
-    def __init__(self):
+class OnlineMultiplayerPage(qtw.QWidget):
+    # TODO: ENSURE THAT THE HOST AND PORT ARE OF A VALID FORMAT
+    def __init__(self, textForConfirmButton: str):
         super().__init__()
         self.hostText = ""
         self.portText = ""
@@ -141,7 +142,7 @@ class JoinOnlineMultiplayerPage(qtw.QWidget):
         self.hostEnter.setPlaceholderText("Host")
         self.hostEnter.setFont(qtg.QFont("Times", 20))
         self.hostEnter.textChanged.connect(
-            lambda t=self.hostEnter.text(): self.updateHostText(t)
+            lambda t=self.hostEnter.text(): self.__updateHostText(t)
         )
         self.layout().addWidget(self.hostEnter)
         self.portEnter = qtw.QLineEdit()
@@ -150,24 +151,24 @@ class JoinOnlineMultiplayerPage(qtw.QWidget):
         self.portEnter.setPlaceholderText("Port")
         self.portEnter.setFont(qtg.QFont("Times", 20))
         self.portEnter.textChanged.connect(
-            lambda t=self.portEnter.text(): self.updatePortText(t)
+            lambda t=self.portEnter.text(): self.__updatePortText(t)
         )
         self.layout().addWidget(self.portEnter)
-        self.joinGameButton = qtw.QPushButton("Join Game")
-        self.joinGameButton.setFixedWidth(250)
-        self.joinGameButton.setFixedHeight(50)
-        self.joinGameButton.setFont(qtg.QFont("Times", 20))
-        self.layout().addWidget(self.joinGameButton)
+        self.confirmButton = qtw.QPushButton(textForConfirmButton)
+        self.confirmButton.setFixedWidth(250)
+        self.confirmButton.setFixedHeight(50)
+        self.confirmButton.setFont(qtg.QFont("Times", 20))
+        self.layout().addWidget(self.confirmButton)
         self.backButton = qtw.QPushButton("Back")
         self.backButton.setFixedWidth(250)
         self.backButton.setFixedHeight(50)
         self.backButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.backButton)
 
-    def updateHostText(self, text: str):
+    def __updateHostText(self, text: str):
         self.hostText = text
 
-    def updatePortText(self, text: str):
+    def __updatePortText(self, text: str):
         self.portText = text
 
     def getHost(self) -> str:
@@ -176,14 +177,14 @@ class JoinOnlineMultiplayerPage(qtw.QWidget):
     def getPort(self) -> str:
         return self.portText
 
-    def bindJoinGameButton(self, *args: Callable):
+    def bindConfirmButton(self, *args: Callable):
         try:
             while True:
-                self.joinGameButton.clicked.disconnect()
+                self.confirmButton.clicked.disconnect()
         except TypeError:
             pass
         for func in args:
-            self.joinGameButton.clicked.connect(func)
+            self.confirmButton.clicked.connect(func)
 
     def bindBackButton(self, *args: Callable):
         try:
@@ -635,7 +636,6 @@ class radioButtonOptionWidget(qtw.QWidget):
 
 
 class AdvancedSetupPage(qtw.QWidget):
-    # TODO: MAKE SCROLLABLE
     def __init__(
         self,
         codeLengthDefault: int = 4,
