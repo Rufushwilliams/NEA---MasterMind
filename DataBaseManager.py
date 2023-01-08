@@ -55,7 +55,8 @@ class dataBaseManager:
                 colourNum INTEGER,
                 duplicatesAllowed INTEGER,
                 date TEXT,
-                timeTaken REAL
+                timeTaken REAL,
+                mode TEXT
                 )"""
             )
 
@@ -182,10 +183,11 @@ class dataBaseManager:
         colourNum: int,
         duplicatesAllowed: bool,
         timeTaken: float,
+        mode: str,
     ):
         with openDB(self.db) as cur:
             cur.execute(
-                """INSERT INTO pastGames (player1, player2, winner, lengthOfCode, numGuesses, numRounds, colourNum, duplicatesAllowed, date, timeTaken) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                """INSERT INTO pastGames (player1, player2, winner, lengthOfCode, numGuesses, numRounds, colourNum, duplicatesAllowed, date, timeTaken, mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     pl1Username,
                     pl2Username,
@@ -197,13 +199,14 @@ class dataBaseManager:
                     duplicatesAllowed,
                     strftime("%d/%m/%Y"),
                     timeTaken,
+                    mode,
                 ),
             )
 
     def getPastGames(self, username: str) -> list[tuple]:
         with openDB(self.db) as cur:
             cur.execute(
-                "SELECT gameID, player1, player2, winner, lengthOfCode, numGuesses, numRounds, colourNum, duplicatesAllowed, date, timeTaken FROM pastGames WHERE player1 = ? OR player2 = ?",
+                "SELECT gameID, player1, player2, winner, lengthOfCode, numGuesses, numRounds, colourNum, duplicatesAllowed, date, timeTaken, mode FROM pastGames WHERE player1 = ? OR player2 = ?",
                 (username, username),
             )
             results = cur.fetchall()

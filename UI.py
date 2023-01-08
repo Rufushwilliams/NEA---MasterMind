@@ -402,12 +402,31 @@ class GUI(UI):
             if gameThread.value == True:
                 return
             timeTaken, won = gameThread.value
+            # handle the game over if it was a timed game
             if timed:
                 self.timedModeOver(timeTaken, won)
+            # Save the updated player stats to the database
             if type(self.player1) == pl.GUI:
                 self._dbm.saveStatsTable(self.player1.getStats())
             if type(self.player2) == pl.GUI:
                 self._dbm.saveStatsTable(self.player2.getStats())
+            # Save the game info to the database
+            if won:
+                winner = self.player1.getUsername()
+            else:
+                winner = self.player2.getUsername()
+            self._dbm.savePastGame(
+                self.player1.getUsername(),
+                self.player2.getUsername(),
+                winner,
+                self._length,
+                self._numGuesses,
+                self._numRounds,
+                self._colourNum,
+                self._duplicatesAllowed,
+                timeTaken,
+                self._mode.name,
+            )
 
     def timedModeOver(self, timeTaken, won):
         if won:
