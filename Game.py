@@ -192,8 +192,11 @@ class Game:
         """
         Updates the players' stats
         """
-        self.__player1.updateStats(self.__winner, self.__numRounds, timePlayed)
-        self.__player2.updateStats(self.__winner, self.__numRounds, timePlayed)
+        winner = None
+        if self.__winner:
+            winner = self.__winner.getUsername()
+        self.__player1.updateStats(winner, self.__numRounds, timePlayed)
+        self.__player2.updateStats(winner, self.__numRounds, timePlayed)
 
     def run(self):
         """

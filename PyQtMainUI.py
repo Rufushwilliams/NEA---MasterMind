@@ -535,7 +535,7 @@ class LeaderBoard(qtw.QWidget):
             LeaderBoardTop([field.name for field in fields(players[0])], True)
         )
         for i, player in enumerate(players):
-            if currPlayer and currPlayer[0] == player:
+            if currPlayer and currPlayer[0].username == player.username:
                 currPlayer = None
                 self.layout().addWidget(LeaderBoardEntry(player, i + 1, True))
             else:
@@ -635,6 +635,7 @@ class radioButtonOptionWidget(qtw.QWidget):
 
 
 class AdvancedSetupPage(qtw.QWidget):
+    # TODO: MAKE SCROLLABLE
     def __init__(
         self,
         codeLengthDefault: int = 4,
