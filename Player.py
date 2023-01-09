@@ -389,7 +389,7 @@ class GUI(Player):
         ###############################
         # GROUP B SKILL: DICTIONARIES #
         ###############################
-        colourMapping = {
+        hardColourMapping = {
             0: "#000000",
             1: "#FF0000",
             2: "#00FF00",
@@ -400,6 +400,10 @@ class GUI(Player):
             7: "#FFA500",
             8: "#6A0DAD",
         }
+        colourMapping = {}
+        for i in hardColourMapping.keys():
+            if i in colours:
+                colourMapping[i] = hardColourMapping[i]
         for i in colours:
             if i not in self.__colourMapping:
                 if i in colourMapping:
