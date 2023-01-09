@@ -220,6 +220,11 @@ class WelcomePage(qtw.QWidget):
         self.startButton.setFixedHeight(50)
         self.startButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.startButton)
+        self.exitButton = qtw.QPushButton("Exit")
+        self.exitButton.setFixedWidth(300)
+        self.exitButton.setFixedHeight(50)
+        self.exitButton.setFont(qtg.QFont("Times", 20))
+        self.layout().addWidget(self.exitButton)
 
     def bindRulesButton(self, *args: Callable):
         try:
@@ -247,6 +252,15 @@ class WelcomePage(qtw.QWidget):
             pass
         for func in args:
             self.startButton.clicked.connect(func)
+
+    def bindExitButton(self, *args: Callable):
+        try:
+            while True:
+                self.exitButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.exitButton.clicked.connect(func)
 
 
 class RulesPage(qtw.QWidget):

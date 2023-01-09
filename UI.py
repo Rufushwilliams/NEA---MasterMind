@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Callable, Type
 
 from PyQt6 import QtWidgets as qtw
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QCoreApplication, QTimer
 
 import Algorithms as alg
 import Player as pl
@@ -145,6 +145,7 @@ class GUI(UI):
         self.welcomePage.bindRulesButton(self.showRulesPage)
         self.welcomePage.bindLeaderboardButton(self.showLeaderBoardPage)
         self.welcomePage.bindStartButton(self.showModePage)
+        self.welcomePage.bindExitButton(QCoreApplication.instance().quit)
         self.rulesPage.bindBackButton(self.showWelcomePage)
         self.leaderBoardPage.bindBackButton(self.showWelcomePage)
         self.__setupModePage()
