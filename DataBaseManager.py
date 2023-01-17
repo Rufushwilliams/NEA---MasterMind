@@ -73,6 +73,9 @@ class dataBaseManager:
         Takes a username and password and adds them to the database.
         Returns True if the registration works, False if the username is already taken
         """
+        # ensure that the username and password are not empty
+        if not username or not password:
+            return False
         ##########################
         # GROUP A SKILL: HASHING #
         ##########################
