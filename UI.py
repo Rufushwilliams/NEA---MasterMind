@@ -548,56 +548,66 @@ class Terminal(UI):
         print("Game setup complete")
         print("-------------------------------------------------------")
 
-    def loginUser(self) -> pl.Player:
+    def loginUser(self) -> pl.Player | None:
         """
         Asks the user to login and returns the player object for the user.
+        If None is returned, the user has chosen not to login.
         """
         print("-------------------------------------------------------")
         print("Please login")
         print("-------------------------------------------------------")
         while True:
-            username = input("Enter your username: ")
-            if username:
-                password = input("Enter your password: ")
-                if self._dbm.login(username, password):
-                    print("Login successful")
-                    break
+            username = input("Enter your username, or skip to go back: ")
+            if not username:
+                return None
+            password = input("Enter your password: ")
+            if self._dbm.login(username, password):
+                stats = self._dbm.createStatsTable(username)
+                print("Login successful")
+                return pl.Terminal(stats)
             print("Invalid username or password")
-        stats = self._dbm.createStatsTable(username)
-        return pl.Terminal(stats)
 
-    def registerUser(self) -> pl.Player:
+    def registerUser(self) -> pl.Player | None:
         """
         Registers a new user, and returns the player object for the user.
+        If None is returned, the user has chosen not to register.
         """
         print("-------------------------------------------------------")
         print("Please register")
         print("-------------------------------------------------------")
         while True:
-            username = input("Enter your username: ")
+            username = input("Enter your username, or skip to go back: ")
+            if not username:
+                return None
             password = input("Enter your password: ")
-            if username and password and self._dbm.register(username, password):
+            if self._dbm.register(username, password):
+                stats = self._dbm.createStatsTable(username)
                 print("Registration successful")
-                break
+                return pl.Terminal(stats)
             print("Registration failed")
-        stats = self._dbm.createStatsTable(username)
-        return pl.Terminal(stats)
 
     def getPlayer(self, msg: str = None) -> pl.Player:
         """
         Asks the user if they want to login or register, and returns the player object for the user.
         """
-        print("-------------------------------------------------------")
-        if msg:
-            print(msg)
-        print("Do you want to login or register?")
         while True:
-            choice = input("Enter l to login or r to register: ")
+            print("-------------------------------------------------------")
+            if msg:
+                print(msg)
+            print("Do you want to login or register?")
+            while True:
+                choice = input("Enter l to login or r to register: ")
+                if choice.lower() in ["l", "r"]:
+                    break
+                print("Please enter l or r")
             if choice.lower() == "l":
-                return self.loginUser()
+                player = self.loginUser()
+                if player:
+                    return player
             elif choice.lower() == "r":
-                return self.registerUser()
-            print("Please enter l or r")
+                player = self.registerUser()
+                if player:
+                    return player
 
     def printLeaderboard(self):
         """
