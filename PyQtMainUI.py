@@ -1,5 +1,6 @@
 from dataclasses import fields
 from enum import Enum
+from ipaddress import ip_address
 from random import choice, randint
 from typing import Callable
 
@@ -178,6 +179,33 @@ class OnlineMultiplayerPage(qtw.QWidget):
 
     def getPort(self) -> str:
         return self.portText
+    
+    def checkHostAndPortFormat(self) -> bool:
+        """
+        Checks the format of the host and port
+        """
+        if not self.getPort().isdigit():
+            return False
+        try:
+            ip_address(self.getHost())
+            return True
+        except ValueError:
+            return False
+
+    def runConfirmButton(self, *args: Callable):
+        """
+        Runs the commands correlated to the confirm button if the host and port are of a valid format.
+        Otherwise, it shows an error message.
+        """
+        if self.checkHostAndPortFormat():
+            for func in args:
+                func()
+        else:
+            error = qtw.QMessageBox()
+            error.setIcon(qtw.QMessageBox.Icon.Critical)
+            error.setText("Invalid host or port")
+            error.setWindowTitle("Error")
+            error.exec()
 
     def bindConfirmButton(self, *args: Callable):
         try:
@@ -185,8 +213,7 @@ class OnlineMultiplayerPage(qtw.QWidget):
                 self.confirmButton.clicked.disconnect()
         except TypeError:
             pass
-        for func in args:
-            self.confirmButton.clicked.connect(func)
+        self.confirmButton.clicked.connect(lambda: self.runConfirmButton(*args))
 
     def bindBackButton(self, *args: Callable):
         try:
