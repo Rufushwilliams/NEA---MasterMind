@@ -1,5 +1,6 @@
 import threading
 from abc import ABC, abstractmethod
+from dataclasses import fields
 from typing import Callable, Type
 
 from PyQt6 import QtWidgets as qtw
@@ -8,7 +9,7 @@ from PyQt6.QtCore import QCoreApplication, QTimer
 import Algorithms as alg
 import Player as pl
 import PyQtMainUI as qtui
-from DataBaseManager import dataBaseManager
+from DataBaseManager import Statistics, dataBaseManager
 from Game import Game
 
 
@@ -598,6 +599,26 @@ class Terminal(UI):
                 return self.registerUser()
             print("Please enter l or r")
 
+    def printLeaderboard(self):
+        """
+        Prints the leaderboard
+        """
+        print("-------------------------------------------------------")
+        print("Leaderboard")
+        print("-------------------------------------------------------")
+        for i, stats in enumerate(self._dbm.getLeaderboard(10)):
+            print(self.getStatsRepresentation(i + 1, stats))
+        print("-------------------------------------------------------")
+
+    def getStatsRepresentation(self, pos: int, stats: Statistics):
+        """
+        Returns a string representation of the given stats
+        """
+        s = f"Position: {pos}, "
+        for field in fields(stats):
+            s += f"{field.name.capitalize()}: {getattr(stats, field.name)}, "
+        return s[:-2]
+
     def run(self):
         """
         Runs the UI
@@ -609,7 +630,8 @@ class Terminal(UI):
             print("Enter 2 to play against another human")
             print("Enter 3 to play timed mode")
             print("Enter 4 edit game settings")
-            print("Enter 5 to exit")
+            print("Enter 5 to view leaderboard")
+            print("Enter 6 to exit")
             print("-------------------------------------------------------")
             choice = input("Enter your choice: ")
             if choice == "1":
@@ -668,6 +690,9 @@ class Terminal(UI):
                 self.setup()
                 continue
             elif choice == "5":
+                self.printLeaderboard()
+                continue
+            elif choice == "6":
                 print("Exiting game...")
                 quit(0)
             else:
