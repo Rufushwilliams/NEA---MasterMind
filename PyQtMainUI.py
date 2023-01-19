@@ -179,7 +179,7 @@ class OnlineMultiplayerPage(qtw.QWidget):
 
     def getPort(self) -> str:
         return self.portText
-    
+
     def checkHostAndPortFormat(self) -> bool:
         """
         Checks the format of the host and port
@@ -242,11 +242,16 @@ class WelcomePage(qtw.QWidget):
         self.leaderboardButton.setFixedHeight(50)
         self.leaderboardButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.leaderboardButton)
-        self.startButton = qtw.QPushButton("Start")
+        self.startButton = qtw.QPushButton("Start Game")
         self.startButton.setFixedWidth(300)
         self.startButton.setFixedHeight(50)
         self.startButton.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(self.startButton)
+        self.logoutButton = qtw.QPushButton("Logout")
+        self.logoutButton.setFixedWidth(300)
+        self.logoutButton.setFixedHeight(50)
+        self.logoutButton.setFont(qtg.QFont("Times", 20))
+        self.layout().addWidget(self.logoutButton)
         self.exitButton = qtw.QPushButton("Exit")
         self.exitButton.setFixedWidth(300)
         self.exitButton.setFixedHeight(50)
@@ -280,6 +285,15 @@ class WelcomePage(qtw.QWidget):
         for func in args:
             self.startButton.clicked.connect(func)
 
+    def bindLogoutButton(self, *args: Callable):
+        try:
+            while True:
+                self.logoutButton.clicked.disconnect()
+        except TypeError:
+            pass
+        for func in args:
+            self.logoutButton.clicked.connect(func)
+
     def bindExitButton(self, *args: Callable):
         try:
             while True:
@@ -298,7 +312,31 @@ class RulesPage(qtw.QWidget):
         rulesLabel.setFont(qtg.QFont("Times", 20))
         self.layout().addWidget(rulesLabel)
         rulesBrowser = qtw.QTextBrowser()
-        rulesText = "The rules are simple.\nThe computer will generate a code of four colours.\nYou will have six guesses to guess the code.\nThe computer will tell you how many colours you have guessed correctly,\nand how many of those colours are in the correct place.\nGood luck!"
+        rulesText = """
+        Mastermind is a code-breaking game for two players.
+        These rules will describe the default settings for the game.
+
+        The players take it in turns to guess the other player's secret code.
+        The code is a sequence of four colours, chosen from six colours.
+        The code may contain repeated colours.
+        The player has six guesses to guess the code.
+        After each guess, you will get feedback.
+        This feedback tells you how many colours you have guessed correctly,
+        and how many of those colours are in the correct place.
+        It comes in the form of red and white pegs.
+        A red peg means that you have guessed a colour correctly and it is in the correct place.
+        A white peg means that you have guessed a colour correctly, but it is in the wrong place.
+        The result pegs do not correspond to any peg from the guess in particular,
+        but rather just the number of correct colours and correct positions.
+
+        Once you have guessed the code, or you have run out of guesses, the round is over.
+        The code guesser wins the round if they guess the code correctly.
+        The code maker wins the round if the code guesser runs out of guesses.
+        The code maker will then become the code guesser, and vice versa.
+        The game is best of three rounds.
+
+        Good luck!
+        """
         rulesBrowser.append(rulesText)
         rulesBrowser.setFont(qtg.QFont("Times", 12))
         self.layout().addWidget(rulesBrowser)

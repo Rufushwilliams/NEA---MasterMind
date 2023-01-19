@@ -143,10 +143,7 @@ class GUI(UI):
 
         # Setup the buttons on the pages
         self.__setupLoginPage(self.showWelcomePage)
-        self.welcomePage.bindRulesButton(self.showRulesPage)
-        self.welcomePage.bindLeaderboardButton(self.showLeaderBoardPage)
-        self.welcomePage.bindStartButton(self.showModePage)
-        self.welcomePage.bindExitButton(QCoreApplication.instance().quit)
+        self.__setupWelcomePage()
         self.rulesPage.bindBackButton(self.showWelcomePage)
         self.leaderBoardPage.bindBackButton(self.showWelcomePage)
         self.__setupModePage()
@@ -194,6 +191,15 @@ class GUI(UI):
             self.loginPage.showBackButton()
         else:
             self.loginPage.hideBackButton()
+
+    def __setupWelcomePage(self):
+        self.welcomePage.bindRulesButton(self.showRulesPage)
+        self.welcomePage.bindLeaderboardButton(self.showLeaderBoardPage)
+        self.welcomePage.bindStartButton(self.showModePage)
+        self.welcomePage.bindExitButton(QCoreApplication.instance().quit)
+        self.welcomePage.bindLogoutButton(
+            lambda: self.__setupLoginPage(self.showWelcomePage), self.showLoginPage
+        )
 
     def __setupModePage(self):
         self.modePage.bindSingleplayerButton(
