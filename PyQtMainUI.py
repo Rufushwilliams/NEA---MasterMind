@@ -133,7 +133,6 @@ class LoginPage(qtw.QWidget):
 
 
 class OnlineMultiplayerPage(qtw.QWidget):
-    # TODO: ENSURE THAT THE HOST AND PORT ARE OF A VALID FORMAT
     def __init__(self, textForConfirmButton: str):
         super().__init__()
         self.hostText = ""
@@ -230,7 +229,7 @@ class WelcomePage(qtw.QWidget):
         super().__init__()
         self.setLayout(qtw.QVBoxLayout())
         welcomeLabel = qtw.QLabel("Welcome to Mastermind!")
-        welcomeLabel.setFont(qtg.QFont("Times", 20))
+        welcomeLabel.setFont(qtg.QFont("Times", 30))
         self.layout().addWidget(welcomeLabel)
         self.rulesButton = qtw.QPushButton("Press to see the rules")
         self.rulesButton.setFixedWidth(300)
