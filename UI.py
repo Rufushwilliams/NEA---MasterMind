@@ -718,9 +718,9 @@ class Terminal(UI):
                     self._computerAlgorithmType,
                 )
                 game = Game(player1, player2, 4, 6, 1, True, 6)
-                timeTaken, win = game.run()
+                timeTaken, p1Win = game.run()
                 print("-------------------------------------------------------")
-                if win:
+                if p1Win:
                     print(f"You have finished in {timeTaken} seconds")
                 else:
                     print("You have lost")
