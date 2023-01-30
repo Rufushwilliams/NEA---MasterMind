@@ -666,8 +666,20 @@ class Terminal(UI):
                     self._duplicatesAllowed,
                     self._colourNum,
                 )
-                game.run()
+                timeTaken, p1Win = game.run()
                 self._dbm.saveStatsTable(player1.getStats())
+                self._dbm.savePastGame(
+                    player1.getUsername(),
+                    player2.getUsername(),
+                    player1.getUsername() if p1Win else player2.getUsername(),
+                    self._length,
+                    self._numGuesses,
+                    self._numRounds,
+                    self._colourNum,
+                    self._duplicatesAllowed,
+                    timeTaken,
+                    qtui.gameModes.SINGLEPLAYER.name,
+                )
                 continue
             elif choice == "2":
                 print("You have chosen to play against another human")
@@ -682,9 +694,21 @@ class Terminal(UI):
                     self._duplicatesAllowed,
                     self._colourNum,
                 )
-                game.run()
+                timeTaken, p1Win = game.run()
                 self._dbm.saveStatsTable(player1.getStats())
                 self._dbm.saveStatsTable(player2.getStats())
+                self._dbm.savePastGame(
+                    player1.getUsername(),
+                    player2.getUsername(),
+                    player1.getUsername() if p1Win else player2.getUsername(),
+                    self._length,
+                    self._numGuesses,
+                    self._numRounds,
+                    self._colourNum,
+                    self._duplicatesAllowed,
+                    timeTaken,
+                    qtui.gameModes.LOCAL_MULTIPLAYER.name,
+                )
                 continue
             elif choice == "3":
                 print("You have chosen to play timed mode")
@@ -701,6 +725,18 @@ class Terminal(UI):
                 else:
                     print("You have lost")
                 self._dbm.saveStatsTable(player1.getStats())
+                self._dbm.savePastGame(
+                    player1.getUsername(),
+                    player2.getUsername(),
+                    player1.getUsername() if p1Win else player2.getUsername(),
+                    self._length,
+                    self._numGuesses,
+                    self._numRounds,
+                    self._colourNum,
+                    self._duplicatesAllowed,
+                    timeTaken,
+                    qtui.gameModes.TIMED.name,
+                )
                 continue
             elif choice == "4":
                 self.setup()
