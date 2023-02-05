@@ -42,6 +42,9 @@ class Game:
         """
         Creates and returns a board
         """
+        ################################################
+        # GROUP A SKILL: DYNAMIC GENERATION OF OBJECTS #
+        ################################################
         return Board(
             length=length,
             totalGuesses=numGuesses,

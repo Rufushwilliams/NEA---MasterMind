@@ -330,6 +330,9 @@ class GUI(UI):
         Setup the game depending on the mode and other settings.
         Then call startGame.
         """
+        ################################################
+        # GROUP A SKILL: DYNAMIC GENERATION OF OBJECTS #
+        ################################################
         length = self._length
         numGuesses = self._numGuesses
         duplicatesAllowed = self._duplicatesAllowed

@@ -925,6 +925,11 @@ class mainWidget(qtw.QWidget):
     It contains a stackedWidget and a centreSpawningWidget.
     """
 
+    #################################################
+    # GROUP A SKILL: COMPLEX USER DEFINED OOP MODEL #
+    # GROUP A SKILL: DYNAMIC GENERATION OF OBJECTS  #
+    #################################################
+
     def __init__(self):
         super().__init__()
         # get the screen size

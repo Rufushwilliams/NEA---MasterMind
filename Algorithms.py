@@ -44,6 +44,10 @@ class RandomConsistent(Algorithm):
     Random algorithm that is consistent with the feedback it is given
     """
 
+    ##################################################
+    # GROUP A SKILL: COMPLEX USER DEFINED ALGORITHMS #
+    ##################################################
+
     def __init__(self, lengthOfCode: int, colourNum: int, duplicatesAllowed: bool):
         super().__init__(lengthOfCode, colourNum, duplicatesAllowed)
         self._previousGuess = None
@@ -130,6 +134,9 @@ class RandomConsistent(Algorithm):
         """
         Returns a list of the result of the guess against the code
         """
+        ##################################
+        # GROUP A SKILL: LIST OPERATIONS #
+        ##################################
         result = []
         tempCode = code.copy()
         tempGuess = guess.copy()
@@ -160,6 +167,11 @@ class Knuths(RandomConsistent):
         6. calculate the next guess using minimax -> choose the guess that has the least worse response score
         7. repeat from step 3
     """
+
+    ##################################################
+    # GROUP A SKILL: COMPLEX USER DEFINED ALGORITHMS #
+    # GROUP A SKILL: COMPLEX USER DEFINED OOP MODEL  #
+    ##################################################
 
     def __init__(self, lengthOfCode: int, colourNum: int, duplicatesAllowed: bool):
         super().__init__(lengthOfCode, colourNum, duplicatesAllowed)
@@ -197,6 +209,7 @@ class Knuths(RandomConsistent):
         #######################################
         # GROUP A SKILL: MERGESORT            #
         # GROUP A SKILL: RECURSIVE ALGORITHMS #
+        # GROUP A SKILL: LIST OPERATIONS      #
         #######################################
         # basis case
         if len(l) == 1:

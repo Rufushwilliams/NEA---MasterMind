@@ -119,6 +119,9 @@ class SocketManager(ABC):
         <pickled data>
         Finally, it should receive a confirmation message.
         """
+        ##################################################
+        # GROUP A SKILL: COMPLEX USER DEFINED ALGORITHMS #
+        ##################################################
         primaryMsg = msg.value + self.possibleMessages.DELIMITER.value + str(len(args))
         # send the primary message
         self.__sendMessage(primaryMsg.encode())
@@ -136,6 +139,9 @@ class SocketManager(ABC):
         It then receives the subsequent pickled data.
         It returns a tuple of the message type and the list of data.
         """
+        ##################################################
+        # GROUP A SKILL: COMPLEX USER DEFINED ALGORITHMS #
+        ##################################################
         # if we do not want the socket to timeout, we set the timeout to None
         if not timeout:
             oldTimeout = self.socket.gettimeout()

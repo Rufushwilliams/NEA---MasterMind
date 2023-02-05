@@ -169,6 +169,9 @@ class boardWidget(qtw.QWidget):
     Stores them in codeWidget and inputs respectively.
     """
 
+    ###########################################
+    # GROUP B SKILL: MULTI-DIMENSIONAL ARRAYS #
+    ###########################################
     def __init__(
         self,
         guesses: list[list[int]],

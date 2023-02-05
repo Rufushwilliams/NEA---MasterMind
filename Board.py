@@ -17,6 +17,9 @@ class Board:
         self.__lenOfGuess = length
         self.__totalGuesses = totalGuesses
         self.__duplicatesAllowed = duplicatesAllowed
+        ############################################
+        # GROUP C SKILL: SINGLE DIMENSIONAL ARRAYS #
+        ############################################
         self.__colourNums = [i for i in range(1, colourNum + 1)]
         self.__resultNums = resultNums
         self.__guessPointer = 0
@@ -67,6 +70,9 @@ class Board:
         """
         Returns a list of the result of a guess
         """
+        ##################################
+        # GROUP A SKILL: LIST OPERATIONS #
+        ##################################
         # checks that the guess is in the correct format
         if self.__code == None:
             raise ValueError("Code is not set")
